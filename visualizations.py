@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from wavefunction import Wavefunction
+from metrics import get_ideal_bitflip, get_ideal_hadamard
 
 
 def extract_odd_even_states(grid, evecs, max_states=15):
@@ -89,7 +90,7 @@ def animate_simulation(grid, prop, initial_wf, total_time, T_h=None, T_f=None, f
 
     # --- 1. Base Plot Configuration ---
     ax.set_xlim(-grid.L, grid.L)
-    ax.set_ylim(0, 0.6)
+    ax.set_ylim(0, 1)
     ax.set_xlabel("Position (x)", fontsize=12)
     ax.set_ylabel(r"Probability Density $|\psi(x,t)|^2$", fontsize=12)
     ax.set_title("Time Evolution of the Location Qubit", fontsize=14, fontweight="bold")
@@ -110,28 +111,42 @@ def animate_simulation(grid, prop, initial_wf, total_time, T_h=None, T_f=None, f
         bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"),
     )
 
-    # Static overlays mapping the base quantum computational registers
-    density_state_1 = initial_wf.get_probability_density()
-    density_state_0 = np.flip(density_state_1)
+    if T_f is not None:
+        # Static overlays mapping the base quantum computational registers
+        density_state_1 = initial_wf.get_probability_density()
+        density_state_0 = np.abs(get_ideal_bitflip(initial_wf)) ** 2
 
-    ax.plot(
-        grid.x,
-        density_state_0,
-        color="gray",
-        linestyle=":",
-        lw=1.5,
-        alpha=0.5,
-        label=r"Basis State $|0\rangle$",
-    )
-    ax.plot(
-        grid.x,
-        density_state_1,
-        color="gray",
-        linestyle="--",
-        lw=1.5,
-        alpha=0.5,
-        label=r"Basis State $|1\rangle$",
-    )
+        ax.plot(
+            grid.x,
+            density_state_0,
+            color="gray",
+            linestyle=":",
+            lw=1.5,
+            alpha=0.5,
+            label=r"Basis State $|0\rangle$",
+        )
+        ax.plot(
+            grid.x,
+            density_state_1,
+            color="gray",
+            linestyle="--",
+            lw=1.5,
+            alpha=0.5,
+            label=r"Basis State $|1\rangle$",
+        )
+
+    if T_h is not None:
+        density_hadamard = np.abs(get_ideal_hadamard(initial_wf)) ** 2
+        ax.plot(
+            grid.x,
+            density_hadamard,
+            color="green",
+            linestyle="-.",
+            lw=1.5,
+            alpha=0.5,
+            label=r"Hadamard State $(|0\rangle + |1\rangle) / \sqrt{2}$",
+        )
+
     ax.legend(loc="upper right", framealpha=0.8)
 
     # Pre-setup the physical state container

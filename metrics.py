@@ -22,4 +22,4 @@ def get_ideal_hadamard(wf_initial):
     """
     mirror_psi = wf_initial.psi[::-1]
     # 1/sqrt(2) * (|initial> + i|mirrored>)
-    return (wf_initial.psi + 1j * mirror_psi) / np.sqrt(2)
+    return (wf_initial.psi - 1j * mirror_psi) / np.sqrt(2)
