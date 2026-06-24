@@ -34,8 +34,8 @@ if __name__ == "__main__":
     # 2. Initialize state |1> (Localized on the RIGHT)
     wf_initial = Wavefunction(grid)
     # wf_initial.init_coherent_state(mu=5.0, omega=omega, m=1.0, hbar=1.0)
-    # wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=5)
-    wf_initial.init_random_packet(xmin=2.0, xmax=8.0)
+    wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=5)
+    # wf_initial.init_random_packet(mu=5.0, delta=1.0)
 
     T_f = np.pi
 

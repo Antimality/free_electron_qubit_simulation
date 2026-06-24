@@ -35,9 +35,9 @@ if __name__ == "__main__":
     wf_initial = Wavefunction(grid)
     np.random.seed(42)
 
-    wf_initial.init_gaussian(mu=5.0, sigma=1)
-    # wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=5)
-    # wf_initial.init_random_packet(xmin=2.0, xmax=8.0)
+    # wf_initial.init_gaussian(mu=5.0, sigma=1)
+    wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=5)
+    # wf_initial.init_random_packet(mu=5.0, sigma=1.0)
 
     E1 = prop.evals[0]
     T_h = (1 / E1) * (np.pi / 2)

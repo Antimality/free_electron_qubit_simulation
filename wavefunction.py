@@ -85,16 +85,19 @@ class Wavefunction:
         norm = np.sqrt(np.sum(np.abs(self.psi) ** 2) * dx)
         self.psi /= norm
 
-    def init_random_packet(self, xmin, xmax, max_modes=15):
+    def init_random_packet(self, mu, delta, max_modes=15):
         """
         Initializes the wavefunction as a physically valid random wave packet
-        confined strictly between 'xmin' and 'xmax'.
+        confined strictly around 'mu' with a spacial variation 'sigma'.
 
         It constructs a superposition of localized box modes with randomized
         amplitudes and phases, ensuring it behaves elegantly under time evolution.
         """
         x = self.grid.x
         self.psi = np.zeros_like(x, dtype=complex)
+
+        xmax = mu + delta
+        xmin = mu - delta
 
         L_local = xmax - xmin
         if L_local <= 0:
