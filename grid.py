@@ -7,7 +7,7 @@ class Grid:
     """
 
     def __init__(self, L, N):
-        self.L = L  # Half-length of the grid (domain is -L to L)
+        self.L = L  # length of the grid (domain is -L to L)
         self.N = N  # Number of discrete spatial points
-        self.x = np.linspace(-L, L, N)
+        self.x = np.linspace(0, L, N)
         self.dx = self.x[1] - self.x[0]

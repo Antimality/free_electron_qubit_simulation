@@ -2,81 +2,113 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from wavefunction import Wavefunction
-from metrics import get_ideal_bitflip, get_ideal_hadamard
+from metrics import get_fidelity, get_ideal_bitflip, get_ideal_hadamard
+from gate_finder import find_bit_flip_time, find_hadamard_time
 
 
-def extract_odd_even_states(grid, evecs, max_states=15):
-    """Separates the first few energy eigenstates into odd and even parities."""
-    odd_idx, even_idx = [], []
+def visual_results(
+    grid,
+    wf_initial,
+    prop,
+    wf_h=None,
+    wf_f=None,
+    T_h=None,
+    T_f=None,
+    max_search_time=1000.0,
+):
+    # Make sure at least one waveform is being displayed
+    assert (wf_h is not None) or (wf_f is not None)
 
-    for i in range(evecs.shape[1]):
-        if len(odd_idx) >= max_states and len(even_idx) >= max_states:
-            break
+    # Generate ideal targets and calculate scores
+    if wf_h is not None:
+        target_h = get_ideal_hadamard(wf_initial)
+        fidelity_h = get_fidelity(wf_h.psi, target_h, grid.dx)
 
-        # Check parity: integral(psi(x) * psi(-x)) dx
-        parity = np.sum(evecs[:, i] * evecs[::-1, i]) * grid.dx
+    if wf_f is not None:
+        target_f = get_ideal_bitflip(wf_initial)
+        fidelity_f = get_fidelity(wf_f.psi, target_f, grid.dx)
 
-        if parity > 0.5 and len(even_idx) < max_states:
-            even_idx.append(i)
-        elif parity < -0.5 and len(odd_idx) < max_states:
-            odd_idx.append(i)
+    # If times are not provided, find them manually
+    if T_h is None:
+        T_h, _ = find_hadamard_time(prop, wf_initial, max_time_search=max_search_time)
 
-    return odd_idx, even_idx
+    if T_f is None:
+        T_f, _ = find_bit_flip_time(prop, wf_initial, max_time_search=max_search_time)
 
+    # Plotting Wavefunctions
+    subplots = 1 + (wf_h is not None) + (wf_f is not None)
+    fig, axs = plt.subplots(1, subplots, figsize=(18, 5), sharey=True)
+    plt.suptitle("Passive Time Evolution from $|1\\rangle$", fontsize=16)
 
-def plot_theory_verifications(prop):
-    """Plots the Overlap Matrix (M_nm) and Eigenstate Phase Tracking."""
-    grid = prop.grid
-    dx = grid.dx
+    # Prepare the data for plotting
+    plot_data = [
+        (
+            wf_initial.psi,
+            wf_initial.psi,
+            "Initial State $|1\\rangle$\n($t=0$)",
+            axs[0],
+            None,
+        ),
+    ]
 
-    odd_idx, even_idx = extract_odd_even_states(grid, prop.evecs)
+    ax_idx = 1
+    if wf_h is not None:
+        plot_data.append(
+            (
+                wf_h.psi,
+                target_h,
+                f"Hadamard State $(|0\\rangle + i|1\\rangle) / \\sqrt{'{2}'}$\n($t={T_h:.1f}$)",
+                axs[ax_idx],
+                fidelity_h,
+            )
+        )
+        ax_idx += 1
 
-    # 1. Calculate Overlap Matrix M_nm over the right half-plane (x > 0)
-    mask = grid.x > 0
-    M_nm = np.zeros((len(odd_idx), len(even_idx)))
+    if wf_f is not None:
+        plot_data.append(
+            (
+                wf_f.psi,
+                target_f,
+                f"Flipped state $|0\\rangle$\n($t={T_f:.1f}$)",
+                axs[ax_idx],
+                fidelity_f,
+            )
+        )
 
-    for n, i_odd in enumerate(odd_idx):
-        for m, i_even in enumerate(even_idx):
-            # M_nm = int_0^inf (alpha_n * beta_m) dx
-            alpha_n = prop.evecs[:, i_odd]
-            beta_m = prop.evecs[:, i_even]
-            M_nm[n, m] = np.sum(alpha_n[mask] * beta_m[mask]) * dx
+    # Plot
+    for psi, psi_target, title, ax, fidelity in plot_data:
+        # Target
+        density_target = np.abs(psi_target) ** 2
+        ax.plot(grid.x, density_target, color="green", linestyle=":", alpha=0.8)
 
-    # 2. Phase Tracking setup
-    T_max = 150
-    t_array = np.linspace(0, T_max, 500)
-    # Track the lowest odd and lowest even state
-    phase_odd = (prop.evals[odd_idx[0]] * t_array) % (2 * np.pi)
-    phase_even = (prop.evals[even_idx[0]] * t_array) % (2 * np.pi)
-    phase_diff = np.abs(phase_odd - phase_even)
+        # Simulated
+        density = np.abs(psi) ** 2
+        ax.plot(grid.x, density, color="#003366", lw=2)
+        ax.fill_between(grid.x, density, color="#003366", alpha=0.2)
 
-    # Plotting
-    fig, axs = plt.subplots(1, 2, figsize=(14, 5))
+        # Symmetry line
+        ax.axvline(grid.L / 2, color="red", linestyle="--", alpha=0.6)
 
-    # Heatmap of M_nm
-    cax = axs[0].imshow(np.abs(M_nm), cmap="viridis", origin="lower")
-    axs[0].set_title("Overlap Matrix $|M_{nm}|$ (Right Half-Plane)")
-    axs[0].set_xlabel("Even State Index (m)")
-    axs[0].set_ylabel("Odd State Index (n)")
-    fig.colorbar(cax, ax=axs[0])
+        ax.set_title(title, fontsize=14)
+        ax.set_xlabel("Position (x)")
+        ax.set_xlim(0, grid.L)
+        ax.grid(alpha=0.3)
 
-    # Phase Tracking
-    axs[1].plot(t_array, phase_diff, label=r"$|\phi_{odd} - \phi_{even}|$")
-    axs[1].axhline(
-        np.pi / 2,
-        color="r",
-        linestyle="--",
-        alpha=0.5,
-        label=r"Hadamard Phase ($\pi/2$)",
-    )
-    axs[1].axhline(
-        np.pi, color="g", linestyle="--", alpha=0.5, label=r"Bit-Flip Phase ($\pi$)"
-    )
-    axs[1].set_title("Relative Phase Evolution of Ground States")
-    axs[1].set_xlabel("Time (atomic units)")
-    axs[1].set_ylabel("Phase Difference (rad)")
-    axs[1].legend()
+        # Display fidelity score
+        if fidelity is not None:
+            props = dict(boxstyle="round", facecolor="wheat", alpha=0.8)
+            ax.text(
+                0.05,
+                0.95,
+                f"Fidelity: {fidelity * 100:.1f}%",
+                transform=ax.transAxes,
+                fontsize=12,
+                verticalalignment="top",
+                bbox=props,
+            )
 
+    # Set y-label once for the whole thing
+    axs[0].set_ylabel("Probability Density $|\\psi(x)|^2$")
     plt.tight_layout()
     plt.show()
 
@@ -89,15 +121,14 @@ def animate_simulation(grid, prop, initial_wf, total_time, T_h=None, T_f=None, f
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # --- 1. Base Plot Configuration ---
-    ax.set_xlim(-grid.L, grid.L)
-    ax.set_ylim(0, 1)
+    ax.set_xlim(0, grid.L)
     ax.set_xlabel("Position (x)", fontsize=12)
     ax.set_ylabel(r"Probability Density $|\psi(x,t)|^2$", fontsize=12)
     ax.set_title("Time Evolution of the Location Qubit", fontsize=14, fontweight="bold")
     ax.grid(alpha=0.3)
 
     # Red dashed symmetry separator line at x=0
-    ax.axvline(0, color="red", linestyle="--", alpha=0.6, lw=1.5)
+    ax.axvline(grid.L / 2, color="red", linestyle="--", alpha=0.6, lw=1.5)
 
     # Initialize plot elements (line + text)
     dummy_y = np.zeros_like(grid.x)

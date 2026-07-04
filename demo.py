@@ -4,22 +4,19 @@ import matplotlib.pyplot as plt
 
 # Import custom modules
 from grid import Grid
-from potentials import infinite_box, double_gaussian
+from potentials import double_gaussian
 from wavefunction import Wavefunction
 from propagator import Propagator
 from gate_finder import find_bit_flip_time, find_hadamard_time
 from metrics import get_fidelity, get_ideal_bitflip, get_ideal_hadamard
-from visualizations import (
-    plot_theory_verifications,
-    animate_simulation,
-    extract_odd_even_states,
-)
+from visualizations import animate_simulation
 
 if __name__ == "__main__":
     # 1. Setup
-    L_grid = 12.0
-    omega = 0.5
-    mu = 5.0
+    L_grid = 1.0
+    omega = 0.05
+    mu = 0.5
+    hbar = 1.0
     N_points = 1000
 
     grid = Grid(L_grid, N_points)
@@ -37,7 +34,7 @@ if __name__ == "__main__":
     # wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=2)
 
     dE = np.abs(prop.evals[0] - prop.evals[1])
-    analytic_T_f = np.pi / dE
+    analytic_T_f = np.pi * hbar / dE
     analytic_T_h = analytic_T_f / 2
 
     # 3. Compute Gate Times
@@ -141,16 +138,9 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    # # 6. Plot Theory Verifications (Overlap Matrix & Phase)
-    # print("\nGenerating theoretical verification plots...")
-    # plot_theory_verifications(prop)
-
-    # # 7. Odd/even
-    # print("\nGenerating odd/even plots...")
-    # extract_odd_even_states(grid, prop.evecs)
-
-    # # 8. Animation
+    # 8. Animation
     print("\nStarting animation of wavefunction evolution...")
+
     # Animate over 2x the bit-flip time to see the full cycle
     animate_simulation(
         grid,

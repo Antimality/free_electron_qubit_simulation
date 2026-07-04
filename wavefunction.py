@@ -19,22 +19,25 @@ class Wavefunction:
 
     def init_coherent_state(self, mu, omega, m=1.0, hbar=1.0, alpha_phase=0.0):
         """
-        Initializes the wavefunction as a minimum-uncertainty coherent state
-        (a displaced ground-state Gaussian) centered at position 'mu'.
+        Initializes the wavefunction as a minimum-uncertainty coherent state.
 
-        As detailed in the theoretical framework, under a harmonic potential
-        of frequency 'omega', this spatial wave packet maintains its shape
-        without spreading during idle hold periods.
+        'mu' represents the displacement offset from the CENTER of the grid
+        (e.g., mu > 0 places it in the right well, mu < 0 in the left well).
         """
         x = self.grid.x
 
+        # 1. Dynamically find the center of the new [0, L] grid
+        # (Using x[-1] safely gets the max boundary regardless of how the Grid class is structured)
+        grid_center = x[-1] / 2.0
+
+        # 2. Shift the requested offset to absolute grid coordinates
+        absolute_mu = grid_center + mu
+
         # Calculate the characteristic oscillator width scale (alpha parameter)
-        # alpha_width = sqrt(m * omega / hbar)
         alpha_width = np.sqrt(m * omega / hbar)
 
-        # Displacement magnitude matches the center 'mu' in units of oscillator length
-        # A displaced ground state profile: psi(x) ~ exp(-0.5 * (alpha_width * (x - mu))^2)
-        exponent = -0.5 * (alpha_width * (x - mu)) ** 2
+        # 3. Use the absolute_mu for the exponent
+        exponent = -0.5 * (alpha_width * (x - absolute_mu)) ** 2
 
         # Incorporate optional phase rotation arg(alpha)
         self.psi = (np.exp(exponent) * np.exp(1j * alpha_phase)).astype(complex)
@@ -48,7 +51,7 @@ class Wavefunction:
         norm = np.sqrt(np.sum(np.abs(self.psi) ** 2) * dx)
         self.psi /= norm
 
-    def init_sine_wave(self, xmin, xmax, n_mode=1):
+    def init_sine_wave(self, mu, delta, n_mode=1):
         """
         Initializes the wavefunction as a localized sine wave mode
         corresponding to an infinite square well (particle in a box) eigenstate
@@ -61,6 +64,8 @@ class Wavefunction:
         self.psi = np.zeros_like(x, dtype=complex)
 
         # Calculate localized box dimensions
+        xmax = mu + delta
+        xmin = mu - delta
         L_local = xmax - xmin
         if L_local <= 0:
             raise ValueError(

@@ -7,11 +7,12 @@ class Propagator:
     Evolves the wavefunction using the Semi-Analytic Eigenbasis Expansion method.
     """
 
-    def __init__(self, grid, potential_array):
+    def __init__(self, grid, potential_array, hbar=1):
         self.grid = grid
         self.dx = grid.dx
         self.N = grid.N
         self.potential = potential_array
+        self.hbar = hbar
 
         # Diagonalize upon instantiation
         self.evals, self.evecs = self._diagonalize()
@@ -46,8 +47,8 @@ class Propagator:
         if self.c_n is None:
             raise ValueError("Initial state not set. Call set_initial_state() first.")
 
-        # Exact phase evolution: c_n(t) = c_0 * exp(-i * E_n * t / hbar)  (hbar=1)
-        phases = np.exp(-1j * self.evals * t)
+        # Exact phase evolution: c_n(t) = c_0 * exp(-i * E_n * t / hbar)
+        phases = np.exp(-1j * self.evals * t / self.hbar)
         c_nt = self.c_n * phases
 
         # Reconstruct psi(x,t) = sum(c_n(t) * evec_n(x))
