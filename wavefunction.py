@@ -17,7 +17,7 @@ class Wavefunction:
         norm = np.sqrt(np.sum(np.abs(psi) ** 2) * self.grid.dx)
         self.psi = (psi / norm).astype(complex)
 
-    def init_coherent_state(self, mu, omega, m=1.0, hbar=1.0, alpha_phase=0.0):
+    def init_coherent_state(self, offset, omega, m=1.0, hbar=1.0, alpha_phase=0.0):
         """
         Initializes the wavefunction as a minimum-uncertainty coherent state.
 
@@ -31,7 +31,7 @@ class Wavefunction:
         grid_center = x[-1] / 2.0
 
         # 2. Shift the requested offset to absolute grid coordinates
-        absolute_mu = grid_center + mu
+        absolute_mu = grid_center + offset
 
         # Calculate the characteristic oscillator width scale (alpha parameter)
         alpha_width = np.sqrt(m * omega / hbar)

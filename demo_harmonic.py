@@ -18,8 +18,8 @@ if __name__ == "__main__":
     N_grid = 1000
     m = 1.0
     hbar = 1.0
-    omega = 0.1
-    mu = L_grid * 3 / 4
+    omega = 500.0
+    offset = L_grid / 4.0
     sigma = 0.05
     delta = 0.1
 
@@ -30,14 +30,14 @@ if __name__ == "__main__":
     # Initialize the Propagator engine
     print("Diagonalizing Hamiltonian (this may take a few seconds)...")
     start_time = time.time()
-    prop = Propagator(grid, potential)
+    prop = Propagator(grid, potential, m=m, hbar=hbar)
     print(f"Diagonalization complete in {time.time() - start_time:.2f} seconds.")
 
     # 2. Initialize state |1> (Localized on the RIGHT)
     wf_initial = Wavefunction(grid)
     np.random.seed(42)
 
-    wf_initial.init_coherent_state(mu=mu, omega=omega, m=m, hbar=hbar)
+    wf_initial.init_coherent_state(offset=offset, omega=omega, m=m, hbar=hbar)
     # wf_initial.init_sine_wave(mu=mu, delta=delta, n_mode=5)
     # wf_initial.init_random_packet(mu=mu, delta=delta)
 

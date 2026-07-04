@@ -7,11 +7,12 @@ class Propagator:
     Evolves the wavefunction using the Semi-Analytic Eigenbasis Expansion method.
     """
 
-    def __init__(self, grid, potential_array, hbar=1):
+    def __init__(self, grid, potential_array, m=1, hbar=1):
         self.grid = grid
         self.dx = grid.dx
         self.N = grid.N
         self.potential = potential_array
+        self.m = m
         self.hbar = hbar
 
         # Diagonalize upon instantiation
@@ -19,21 +20,17 @@ class Propagator:
         self.c_n = None  # Expansion coefficients
 
     def _diagonalize(self):
-        """Constructs the Hamiltonian and finds its eigenvalues and eigenvectors."""
-        # 1. Kinetic Energy Matrix (Tridiagonal finite difference for d^2/dx^2)
-        # K = - (1/2m) * d^2/dx^2  (assuming m=1)
-        diag = np.ones(self.N) * (1.0 / self.dx**2)
-        off_diag = np.ones(self.N - 1) * (-0.5 / self.dx**2)
+        # Calculate the proper kinetic coefficient: hbar^2 / 2m
+        coeff = (self.hbar**2) / (2.0 * self.m * self.dx**2)
+
+        # Apply to finite difference matrix
+        diag = np.ones(self.N) * (2.0 * coeff)
+        off_diag = np.ones(self.N - 1) * (-1.0 * coeff)
         H = np.diag(diag) + np.diag(off_diag, k=1) + np.diag(off_diag, k=-1)
 
-        # 2. Add Potential Energy
         H += np.diag(self.potential)
 
-        # 3. Solve for Eigenvalues (E_n) and Eigenvectors (psi_n)
         evals, evecs = eigh(H)
-
-        # scipy eigh normalizes Euclidean vectors (sum V^2 = 1).
-        # We need continuous space normalization (int |V|^2 dx = 1)
         evecs = evecs / np.sqrt(self.dx)
         return evals, evecs
 
