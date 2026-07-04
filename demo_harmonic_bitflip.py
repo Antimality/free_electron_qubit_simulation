@@ -13,6 +13,7 @@ from visualizations import (
     plot_theory_verifications,
     animate_simulation,
     extract_odd_even_states,
+    plot_waveform_evolution_2d,
 )
 
 if __name__ == "__main__":
@@ -34,8 +35,8 @@ if __name__ == "__main__":
     # 2. Initialize state |1> (Localized on the RIGHT)
     wf_initial = Wavefunction(grid)
     # wf_initial.init_coherent_state(mu=5.0, omega=omega, m=1.0, hbar=1.0)
-    wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=5)
-    # wf_initial.init_random_packet(mu=5.0, delta=1.0)
+    # wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=5)
+    wf_initial.init_random_packet(mu=5.0, delta=3.0)
 
     T_f = np.pi
 
@@ -121,3 +122,6 @@ if __name__ == "__main__":
         T_f=T_f,
         fps=30,
     )
+
+    print("Plotting 2D waveform evolution...")
+    plot_waveform_evolution_2d(grid, wf_initial, prop, 200, T_f * 2)

@@ -13,6 +13,11 @@ def harmonic_oscillator(grid, omega):
     return 0.5 * (omega**2) * grid.x**2
 
 
+def inharmonic_oscillator(grid, omega, gamma):
+    """A standard parabolic trap with an x^4 disturbance."""
+    return 0.5 * (omega**2) * grid.x**2 + gamma * grid.x**4
+
+
 def ponderomotive_trap(grid, U0, sigma):
     """
     Effective potential from the focused laser field.
@@ -30,3 +35,14 @@ def double_well(grid, omega, mu):
     left_well = (grid.x + mu) ** 2
     right_well = (grid.x - mu) ** 2
     return 0.5 * (omega**2) * np.minimum(left_well, right_well)
+
+
+def double_gaussian(grid, U0, sigma, mu):
+    """
+    A double-Gaussian potential with two centered peaks or wells.
+    The centers are located at x = -mu and x = +mu.
+    """
+    left_peak = np.exp(-((grid.x + mu) ** 2) / (2 * sigma**2))
+    right_peak = np.exp(-((grid.x - mu) ** 2) / (2 * sigma**2))
+    return U0 * (left_peak + right_peak)
+

@@ -237,3 +237,64 @@ def animate_simulation(grid, prop, initial_wf, total_time, T_h=None, T_f=None, f
 
     plt.show()
     return anim
+
+
+def plot_waveform_evolution_2d(grid, wf_initial, prop, n_steps, max_time, cmap="magma"):
+    """
+    Plots a 2D heatmap of the electron's probability density over time,
+    displaying the full time evolution continuously without animation holds.
+
+    Args:
+        time_array (np.ndarray): 1D array of time steps.
+        grid_x (np.ndarray): 1D array of spatial grid points.
+        density_matrix (np.ndarray): 2D array of shape (len(time_array), len(grid_x))
+                                     containing probability densities |psi(x,t)|^2.
+        cmap (str): Colormap to match your desired color scheme.
+    """
+    # Define how many time steps to calculate, and the time range
+    time_array = np.linspace(0, max_time, n_steps)
+
+    # Initialize an empty list to store the time slices
+    density_history = []
+    temp_wf = Wavefunction(grid)
+
+    # Ensure the propagator is starting from our designated initial state
+    prop.set_initial_state(wf_initial)
+
+    for t in time_array:
+        # Evolve the state to absolute time t and store in temp_wf
+        prop.evolve(t, temp_wf)
+
+        # Extract probability density (fallback to np.abs if method isn't defined)
+        if hasattr(temp_wf, "get_probability_density"):
+            density = temp_wf.get_probability_density()
+        else:
+            density = np.abs(temp_wf.psi) ** 2
+
+        density_history.append(density)
+
+    # Convert the list of 1D arrays into a single 2D NumPy array
+    density_matrix = np.array(density_history)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Create a 2D coordinate grid for the time and position axes
+    X, T = np.meshgrid(grid.x, time_array)
+
+    # Plot the density as a 2D continuous heatmap
+    # shading='auto' ensures smooth rendering across the grid points
+    c = ax.pcolormesh(T, X, density_matrix, cmap=cmap, shading="auto")
+
+    # Formatting and labels
+    ax.set_title("Wavefunction Probability Density Evolution", fontsize=14)
+    ax.set_ylabel("Position (x)", fontsize=12)
+    ax.set_xlabel("Time (t)", fontsize=12)
+
+    # Add a colorbar to represent the density magnitude
+    cbar = fig.colorbar(c, ax=ax)
+
+    # Use raw string for LaTeX formatting to avoid syntax warnings
+    cbar.set_label(r"$|\psi(x,t)|^2$", fontsize=12)
+
+    plt.tight_layout()
+    plt.show()

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # Import custom modules
 from grid import Grid
-from potentials import infinite_box
+from potentials import infinite_box, double_gaussian
 from wavefunction import Wavefunction
 from propagator import Propagator
 from gate_finder import find_bit_flip_time, find_hadamard_time
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     N_points = 1000
 
     grid = Grid(L_grid, N_points)
-    potential = infinite_box(grid, omega)
+    potential = double_gaussian(grid, U0=1, sigma=1, mu=10)
 
     # Initialize the Propagator engine
     print("Diagonalizing Hamiltonian (this may take a few seconds)...")
@@ -33,8 +33,8 @@ if __name__ == "__main__":
 
     # 2. Initialize state |1> (Localized on the RIGHT)
     wf_initial = Wavefunction(grid)
-    # wf_initial.init_coherent_state(mu=5.0, omega=omega, m=1.0, hbar=1.0)
-    wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=2)
+    wf_initial.init_coherent_state(mu=5.0, omega=omega, m=1.0, hbar=1.0)
+    # wf_initial.init_sine_wave(xmin=2.0, xmax=8.0, n_mode=2)
 
     dE = np.abs(prop.evals[0] - prop.evals[1])
     analytic_T_f = np.pi / dE
