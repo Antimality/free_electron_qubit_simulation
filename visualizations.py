@@ -113,7 +113,9 @@ def visual_results(
     plt.show()
 
 
-def animate_simulation(grid, prop, initial_wf, total_time, T_h=None, T_f=None, fps=30):
+def animate_simulation(
+    grid, prop, initial_wf, total_time, T_h=None, T_f=None, fps=30, y_lim=None
+):
     """
     Creates an animation of the wavefunction density over time without the fill region.
     Includes a 1-second pause at any integer multiple of T_h and T_f.
@@ -122,6 +124,8 @@ def animate_simulation(grid, prop, initial_wf, total_time, T_h=None, T_f=None, f
 
     # --- 1. Base Plot Configuration ---
     ax.set_xlim(0, grid.L)
+    if y_lim is not None:
+        ax.set_ylim(0, y_lim)
     ax.set_xlabel("Position (x)", fontsize=12)
     ax.set_ylabel(r"Probability Density $|\psi(x,t)|^2$", fontsize=12)
     ax.set_title("Time Evolution of the Location Qubit", fontsize=14, fontweight="bold")
@@ -129,6 +133,9 @@ def animate_simulation(grid, prop, initial_wf, total_time, T_h=None, T_f=None, f
 
     # Red dashed symmetry separator line at x=0
     ax.axvline(grid.L / 2, color="red", linestyle="--", alpha=0.6, lw=1.5)
+
+    # Visualizing the potential
+    ax.plot(grid.x, prop.potential, color="black", linestyle="-", lw=2, alpha=0.7)
 
     # Initialize plot elements (line + text)
     dummy_y = np.zeros_like(grid.x)
