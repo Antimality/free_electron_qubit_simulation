@@ -135,7 +135,15 @@ def animate_simulation(
     ax.axvline(grid.L / 2, color="red", linestyle="--", alpha=0.6, lw=1.5)
 
     # Visualizing the potential
-    ax.plot(grid.x, prop.potential, color="black", linestyle="-", lw=2, alpha=0.7)
+    ax.plot(
+        grid.x,
+        prop.potential,
+        color="black",
+        linestyle="-",
+        lw=2,
+        alpha=0.7,
+        label="Active Potential",
+    )
 
     # Initialize plot elements (line + text)
     dummy_y = np.zeros_like(grid.x)
