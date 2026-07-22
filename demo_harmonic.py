@@ -85,6 +85,7 @@ if __name__ == "__main__":
         total_time=T_f * 2,
         T_f=T_f,
         fps=30,
+        y_lim=15.0,
     )
 
     # 2D Visualization
