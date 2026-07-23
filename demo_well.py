@@ -1,7 +1,5 @@
 import time
 import numpy as np
-import qutip as qt
-import matplotlib.pyplot as plt
 
 # Import custom modules
 from grid import Grid
@@ -10,9 +8,7 @@ from wavefunction import Wavefunction
 from propagator import Propagator
 from visualizations import (
     visual_results,
-    animate_simulation,
     plot_waveform_evolution_2d,
-    animate_bloch_sphere,
     animate_combined_simulation,
 )
 
@@ -47,7 +43,7 @@ if __name__ == "__main__":
     # Calculate theoretical gate times
     E1 = np.pow(np.pi * hbar, 2) / (2 * m * L_grid**2)
     # BUG: For some reason, this works better.
-    # E1 = prop.evals[0]
+    E1 = prop.evals[0]
     T_h = (np.pi * hbar) / (2 * E1)
     T_f = 2 * T_h
 
@@ -58,18 +54,6 @@ if __name__ == "__main__":
     prop.set_initial_state(wf_initial)
     prop.evolve(T_h, wf_h)
     prop.evolve(T_f, wf_f)
-
-     # Combined Split-Screen Animation
-    print("\nStarting combined split-screen animation...")
-    animate_combined_simulation(
-        grid,
-        prop,
-        wf_initial,
-        total_time=T_f * 2,
-        T_h=T_h,
-        T_f=T_f,
-        fps=30,
-    )
 
     # Visual validation
     print("\nSimulating...")
@@ -83,17 +67,17 @@ if __name__ == "__main__":
         T_f=T_f,
     )
 
-    # # Animation
-    # print("\nStarting animation of wavefunction evolution...")
-    # animate_simulation(
-    #     grid,
-    #     prop,
-    #     wf_initial,
-    #     total_time=T_f * 2,
-    #     T_h=T_h,
-    #     T_f=T_f,
-    #     fps=30,
-    # )
+    # Combined Split-Screen Animation
+    print("\nStarting combined split-screen animation...")
+    animate_combined_simulation(
+        grid,
+        prop,
+        wf_initial,
+        total_time=T_f * 2,
+        T_h=T_h,
+        T_f=T_f,
+        fps=30,
+    )
 
     # 2D Visualization
     print("\nPlotting 2D waveform evolution...")
@@ -104,17 +88,3 @@ if __name__ == "__main__":
         n_steps=200,
         max_time=T_f * 2,
     )
-
-    # # Animation on the bloch sphere
-    # print("\nStarting animation of bloch sphere ...")
-    # animate_bloch_sphere(
-    #     grid,
-    #     prop,
-    #     wf_initial,
-    #     total_time=T_f * 2,
-    #     T_h=T_h,
-    #     T_f=T_f,
-    #     fps=30,
-    # )
-    
-   
