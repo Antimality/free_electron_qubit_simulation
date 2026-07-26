@@ -60,6 +60,10 @@ def _precompute_evolution(grid, prop, time_array):
     return densities, bloch_states
 
 
+import numpy as np
+from matplotlib.widgets import Slider, Button
+from matplotlib.animation import FuncAnimation
+
 def _build_interactive_animation(
     fig, time_array, update_func, frame_interval_ms, T_h=None, T_f=None
 ):
@@ -70,24 +74,34 @@ def _build_interactive_animation(
     # Adjust layout to make room for the UI space
     fig.subplots_adjust(bottom=0.25)
 
+    # Slider width is 0.70 (0.15 to 0.85). Buttons are spaced evenly underneath it.
     ax_slider = fig.add_axes([0.15, 0.12, 0.7, 0.03])
-    ax_play = fig.add_axes([0.15, 0.04, 0.1, 0.05])
-    ax_step = fig.add_axes([0.27, 0.04, 0.1, 0.05])
+    
+    ax_play   = fig.add_axes([0.15, 0.04, 0.10, 0.05])
+    ax_step   = fig.add_axes([0.27, 0.04, 0.10, 0.05])
+    ax_reset  = fig.add_axes([0.39, 0.04, 0.10, 0.05])
 
     slider = Slider(ax_slider, "Time", 0, time_array[-1], valinit=0, color="#003366")
     btn_play = Button(ax_play, "Pause", hovercolor="0.975")
     btn_step = Button(ax_step, "Step", hovercolor="0.975")
+    btn_reset = Button(ax_reset, "Reset", hovercolor="0.975")
+
+    btn_reset.on_clicked(lambda event: slider.set_val(0.0))
 
     # --- Setup Conditional Jump Buttons ---
     btn_h, btn_f = None, None
+    
+    # Start positioning dynamic buttons after the Reset button (0.39 + 0.10 width + 0.02 spacing)
+    next_x = 0.51 
+    
     if T_h is not None and T_h > 0:
-        ax_h = fig.add_axes([0.39, 0.04, 0.15, 0.05])
+        ax_h = fig.add_axes([next_x, 0.04, 0.15, 0.05])
         btn_h = Button(ax_h, "Hadamard", hovercolor="0.975")
         btn_h.on_clicked(lambda event: slider.set_val(T_h))
-
+        next_x += 0.17  # Move next_x right by button width (0.15) + spacing (0.02)
+        
     if T_f is not None and T_f > 0:
-        x_pos = 0.56 if (T_h is not None and T_h > 0) else 0.39
-        ax_f = fig.add_axes([x_pos, 0.04, 0.15, 0.05])
+        ax_f = fig.add_axes([next_x, 0.04, 0.15, 0.05])
         btn_f = Button(ax_f, "Bit Flip", hovercolor="0.975")
         btn_f.on_clicked(lambda event: slider.set_val(T_f))
 
@@ -152,8 +166,7 @@ def _build_interactive_animation(
     btn_step.on_clicked(step_frame)
     slider.on_changed(scrub)
 
-    return anim, (slider, btn_play, btn_step, btn_h, btn_f, state)
-
+    return anim, (slider, btn_play, btn_step, btn_reset, btn_h, btn_f, state)
 
 def _setup_1d_axis(ax, grid, prop, initial_wf, y_lim=None, T_h=None, T_f=None):
     """Configures the 1D spatial evolution subplot and draws static overlays."""
