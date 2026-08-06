@@ -8,8 +8,8 @@ from wavefunction import Wavefunction
 from propagator import Propagator
 from visualizations import (
     visual_results,
-    animate_simulation,
     plot_waveform_evolution_2d,
+    animate_combined_simulation,
 )
 
 if __name__ == "__main__":
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # Calculate theoretical gate times
     E1 = np.pow(np.pi * hbar, 2) / (2 * m * L_grid**2)
     # BUG: For some reason, this works better.
-    # E1 = prop.evals[0]
+    E1 = prop.evals[0]
     T_h = (np.pi * hbar) / (2 * E1)
     T_f = 2 * T_h
 
@@ -67,9 +67,9 @@ if __name__ == "__main__":
         T_f=T_f,
     )
 
-    # Animation
-    print("\nStarting animation of wavefunction evolution...")
-    animate_simulation(
+    # Combined Split-Screen Animation
+    print("\nStarting combined split-screen animation...")
+    animate_combined_simulation(
         grid,
         prop,
         wf_initial,
