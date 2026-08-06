@@ -1,6 +1,7 @@
 import time
 import numpy as np
 
+
 # Import custom modules
 from grid import Grid
 from potentials import harmonic_oscillator
@@ -8,8 +9,8 @@ from wavefunction import Wavefunction
 from propagator import Propagator
 from visualizations import (
     visual_results,
-    animate_simulation,
     plot_waveform_evolution_2d,
+    animate_combined_simulation,
 )
 
 if __name__ == "__main__":
@@ -42,7 +43,7 @@ if __name__ == "__main__":
     # wf_initial.init_random_packet(mu=mu, delta=delta)
 
     # Calculate theoretical gate times
-    T_f = np.pi / omega
+    T_f = (np.pi * hbar) / omega
 
     # Evolve
     wf_f = Wavefunction(grid)
@@ -60,15 +61,16 @@ if __name__ == "__main__":
         T_f=T_f,
     )
 
-    # Animation
-    print("\nStarting animation of wavefunction evolution...")
-    animate_simulation(
+    # Combined Split-Screen Animation
+    print("\nStarting combined split-screen animation...")
+    animate_combined_simulation(
         grid,
         prop,
         wf_initial,
         total_time=T_f * 2,
         T_f=T_f,
         fps=30,
+        y_lim=15.0,
     )
 
     # 2D Visualization

@@ -151,11 +151,48 @@ class Wavefunction:
         return np.abs(self.psi) ** 2
 
     def get_left_probability(self):
-        """Probability amplitude of the |0> state (x < 0)."""
-        mask = self.grid.x < 0
+        """Probability amplitude of the |0> state (left half of the grid)."""
+        grid_center = self.grid.x[-1] / 2.0
+        mask = self.grid.x < grid_center
         return np.sum(self.get_probability_density()[mask]) * self.grid.dx
 
     def get_right_probability(self):
-        """Probability amplitude of the |1> state (x >= 0)."""
-        mask = self.grid.x >= 0
+        """Probability amplitude of the |1> state (right half of the grid)."""
+        grid_center = self.grid.x[-1] / 2.0
+        mask = self.grid.x >= grid_center
         return np.sum(self.get_probability_density()[mask]) * self.grid.dx
+
+    def get_qutip_qubit(self):
+        """
+        Converts the continuous spatial wavefunction into a 2-level QuTiP Qobj (ket),
+        ready to be visualized on a Bloch sphere.
+        """
+        try:
+            import qutip as qt
+        except ImportError:
+            raise ImportError("The 'qutip' library is required.")
+
+        # מציאת מרכז המרחב כדי להפריד בין צד ימין לצד שמאל
+        grid_center = self.grid.x[-1] / 2.0
+
+        mask0 = self.grid.x < grid_center
+        mask1 = self.grid.x >= grid_center
+
+        # חישוב הסתברויות מתוקן לחצי רשת
+        density = self.get_probability_density()
+        dx = self.grid.dx if hasattr(self.grid, "dx") else (self.grid.x[1] - self.grid.x[0])
+        
+        p0 = np.sum(density[mask0]) * dx
+        p1 = np.sum(density[mask1]) * dx
+
+        # חילוץ הפאזה הממוצעת משני צידי הפוטנציאל
+        phase_0 = np.angle(np.sum(self.psi[mask0])) if p0 > 1e-12 else 0.0
+        phase_1 = np.angle(np.sum(self.psi[mask1])) if p1 > 1e-12 else 0.0
+
+        # בניית האמפליטודות תוך שמירה על המידע של הפאזה (הכרחי לתנועה על קו המשווה)
+        alpha = np.sqrt(p0) * np.exp(1j * phase_0)
+        beta  = np.sqrt(p1) * np.exp(1j * phase_1)
+
+        qubit_state = qt.Qobj([[alpha], [beta]])
+        
+        return qubit_state.unit()
