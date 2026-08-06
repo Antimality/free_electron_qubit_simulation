@@ -18,7 +18,7 @@ if __name__ == "__main__":
     N_grid = 1000
     m = 1.0
     hbar = 1.0
-    omega = 500.0
+    omega = 5.0
     offset = L_grid / 4.0
     sigma = 0.05
     delta = 0.1

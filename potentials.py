@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def infinite_box(grid, L_box):
-    """A flat well with infinitely high walls from 0 to L_box."""
+def infinite_box(grid):
+    """A flat well with infinitely high walls from 0 to L_grid."""
     U = np.zeros(grid.N)
 
-    # Set potential to 1e6 (infinity) anywhere outside the [0, L_box] range
-    U[(grid.x < 0) | (grid.x > L_box)] = 1e6
+    # Set potential to 1e6 (infinity) anywhere outside the [0, L_grid] range
+    U[(grid.x < 0) | (grid.x > grid.L)] = 1e6
 
     return U
 
@@ -21,7 +21,7 @@ def inharmonic_oscillator(grid, m, omega, gamma):
     return harmonic_oscillator(grid, m, omega) + gamma * (grid.x - grid.L / 2) ** 4
 
 
-def double_gaussian(grid, U0, sigma, mu):
+def double_gaussian(grid, U0, sigma):
     """
     A double-Gaussian potential with two centered peaks or wells.
     The centers are located at x = 0 and x = L

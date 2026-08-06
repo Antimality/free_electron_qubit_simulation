@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Setup
     grid = Grid(L_grid, N_grid)
-    potential = infinite_box(grid, L_grid)
+    potential = infinite_box(grid)
 
     # Initialize the Propagator engine
     print("Diagonalizing Hamiltonian (this may take a few seconds)...")
