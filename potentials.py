@@ -31,6 +31,59 @@ def double_gaussian(grid, U0, sigma, mu):
     return U0 * (left_peak + right_peak)
 
 
+def coulomb_and_infinite_box(grid, L_box, interacting_mu, k_coulomb=0.1, softening=0.05):
+    """
+    An infinite box potential combined with a 1D soft-core Coulomb interaction.
+    
+    Parameters:
+    - interacting_mu: The position of the *other* qubit (the source of the Coulomb force).
+    - k_coulomb: Interaction strength (q1*q2). Positive values mean repulsion.
+    - softening: A small parameter to prevent division by zero at x = interacting_mu.
+    """
+    # 1. התחלה עם פוטנציאל הבור האינסופי
+    U_total = infinite_box(grid, L_box).copy()
+    
+    # 2. הוספת פוטנציאל קולון המרוכך
+    U_coulomb = k_coulomb / np.sqrt((grid.x - interacting_mu)**2 + softening**2)
+    
+    # חיבור הפוטנציאלים. מחוץ לבור הפוטנציאל יישאר 1e6 (בגלל הבור האינסופי)
+    U_total += U_coulomb
+    
+    return U_total
+
+import numpy as np
+
+def asymmetric_coulomb_double_well(grid, L_box, interacting_mu, depth1=-500.0, depth2=-300.0, mu1=None, mu2=None, well_sigma=0.05, k_coulomb=0.1, softening=0.05):
+    """
+    An asymmetric double-Gaussian well combined with Coulomb interaction.
+    depth1 and depth2 control the depth of each well independently to break symmetry.
+    """
+    if mu1 is None:
+        mu1 = L_box * 0.25
+    if mu2 is None:
+        mu2 = L_box * 0.75
+
+    # 1. התחלה עם פוטנציאל אפס וגבולות אינסופיים
+    U_total = np.zeros(grid.N)
+    out_of_bounds = (grid.x < 0) | (grid.x > L_box)
+    
+    # 2. יצירת שני הבורות הגאוסיאניים (ערכים שליליים כדי ליצור בור)
+    well1 = depth1 * np.exp(-((grid.x - mu1)**2) / (2 * well_sigma**2))
+    well2 = depth2 * np.exp(-((grid.x - mu2)**2) / (2 * well_sigma**2))
+    
+    # חיבור הבורות לפוטנציאל
+    U_total[~out_of_bounds] += well1[~out_of_bounds] + well2[~out_of_bounds]
+    
+    # חסימת הקצוות לאינסוף
+    U_total[out_of_bounds] = 1e6
+    
+    # 3. הוספת פוטנציאל קולון מרוכך מהקיוביט השני
+    U_coulomb = k_coulomb / np.sqrt((grid.x - interacting_mu)**2 + softening**2)
+    U_total += U_coulomb
+    
+    return U_total
+
+
 # def ponderomotive_trap(grid, U0, sigma):
 #     """
 #     Effective potential from the focused laser field.
