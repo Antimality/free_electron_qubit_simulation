@@ -22,17 +22,17 @@ def inharmonic_oscillator(grid, m, omega, gamma):
     return harmonic_oscillator(grid, m, omega) + gamma * (grid.x - grid.L / 2) ** 4
 
 
-def double_gaussian(grid, U0, sigma):
+def double_gaussian(grid, U0, sigma, mu):
     """
     A double-Gaussian potential with two centered peaks or wells.
-    The centers are located at x = 0 and x = L
+    The centers are located symmetrically at x = -mu and x = +mu.
     """
-    left_peak = np.exp(-((grid.x) ** 2) / (2 * sigma**2))
-    right_peak = np.exp(-((grid.x - grid.L) ** 2) / (2 * sigma**2))
+    left_peak = np.exp(-((grid.x + mu) ** 2) / (2 * sigma**2))
+    right_peak = np.exp(-((grid.x - mu) ** 2) / (2 * sigma**2))
     return U0 * (left_peak + right_peak)
 
 
-def coulomb_and_infinite_box(grid, L_box, interacting_mu, k_coulomb=0.1, softening=0.05):
+def coulomb_and_infinite_box(grid, interacting_mu, k_coulomb=0.1, softening=0.05):
     """
     An infinite box potential combined with a 1D soft-core Coulomb interaction.
     
@@ -42,7 +42,7 @@ def coulomb_and_infinite_box(grid, L_box, interacting_mu, k_coulomb=0.1, softeni
     - softening: A small parameter to prevent division by zero at x = interacting_mu.
     """
     # 1. התחלה עם פוטנציאל הבור האינסופי
-    U_total = infinite_box(grid, L_box).copy()
+    U_total = infinite_box(grid).copy()
     
     # 2. הוספת פוטנציאל קולון המרוכך
     U_coulomb = k_coulomb / np.sqrt((grid.x - interacting_mu)**2 + softening**2)
@@ -64,7 +64,7 @@ def asymmetric_coulomb_double_well(grid, L_box, interacting_mu, depth1=-500.0, d
 
     # 1. התחלה עם פוטנציאל אפס וגבולות אינסופיים
     U_total = np.zeros(grid.N)
-    out_of_bounds = (grid.x < 0) | (grid.x > L_box)
+    out_of_bounds = (grid.x < grid.x[0]) | (grid.x > grid.x[-1])
     
     # 2. יצירת שני הבורות הגאוסיאניים (ערכים שליליים כדי ליצור בור)
     well1 = depth1 * np.exp(-((grid.x - mu1)**2) / (2 * well_sigma**2))
