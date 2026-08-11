@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import eigh
+from scipy.linalg import eigh, eig
 
 
 class Propagator:
@@ -28,16 +28,30 @@ class Propagator:
         off_diag = np.ones(self.N - 1) * (-1.0 * coeff)
         H = np.diag(diag) + np.diag(off_diag, k=1) + np.diag(off_diag, k=-1)
 
-        H += np.diag(self.potential)
+        H = H + np.diag(self.potential)
 
-        evals, evecs = eigh(H)
+        if np.iscomplexobj(self.potential):
+            evals, evecs = eig(H)
+
+            idx = np.argsort(np.real(evals))
+            evals = evals[idx]
+            evecs = evecs[:, idx]
+        else:
+            evals, evecs = eigh(H)
+
         evecs = evecs / np.sqrt(self.dx)
         return evals, evecs
 
     def set_initial_state(self, wavefunction):
         """Projects the initial spatial state onto the energy eigenstates."""
-        # c_n = integral( evec_n^* * psi(x,0) ) dx
-        self.c_n = np.dot(np.conj(self.evecs.T), wavefunction.psi) * self.dx
+
+        if np.iscomplexobj(self.potential):
+            # For non-Hermitian systems, eigenvectors are not orthogonal.
+            # We solve the linear system: evecs * c_n = psi
+            self.c_n = np.linalg.solve(self.evecs, wavefunction.psi) 
+        else:
+            # c_n = integral( evec_n^* * psi(x,0) ) dx
+            self.c_n = np.dot(np.conj(self.evecs.T), wavefunction.psi) * self.dx
 
     def evolve(self, t, wavefunction_out):
         """Evolves the coefficients analytically and reconstructs the spatial state."""

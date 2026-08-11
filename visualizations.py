@@ -170,7 +170,10 @@ def _build_interactive_animation(
 
 def _setup_1d_axis(ax, grid, prop, initial_wf, y_lim=None, T_h=None, T_f=None):
     """Configures the 1D spatial evolution subplot and draws static overlays."""
-    ax.set_xlim(0, grid.L)
+    x_min, x_max = grid.x[0], grid.x[-1]
+    grid_center = (x_min + x_max) / 2
+    
+    ax.set_xlim(x_min, x_max)
     if y_lim is not None:
         ax.set_ylim(0, y_lim)
     ax.set_xlabel("Position (x)", fontsize=12)
@@ -178,12 +181,12 @@ def _setup_1d_axis(ax, grid, prop, initial_wf, y_lim=None, T_h=None, T_f=None):
     ax.set_title("Spatial Wavefunction Evolution", fontsize=14, fontweight="bold")
     ax.grid(alpha=0.3)
 
-    ax.axvline(grid.L / 2, color="red", linestyle="--", alpha=0.6, lw=1.5)
+    ax.axvline(grid_center, color="red", linestyle="--", alpha=0.6, lw=1.5)
 
     if hasattr(prop, "potential"):
         ax.plot(
             grid.x,
-            prop.potential,
+            prop.potential, 
             color="black",
             linestyle="-",
             lw=2,
@@ -285,6 +288,9 @@ def visual_results(
     T_f=None,
     max_search_time=1000.0,
 ):
+    x_min, x_max = grid.x[0], grid.x[-1]
+    grid_center = (x_min + x_max) / 2
+
     assert (wf_h is not None) or (wf_f is not None)
 
     if wf_h is not None:
@@ -354,7 +360,7 @@ def visual_results(
 
         ax.set_title(title, fontsize=14)
         ax.set_xlabel("Position (x)")
-        ax.set_xlim(0, grid.L)
+        ax.set_xlim(x_min, x_max)
         ax.grid(alpha=0.3)
 
         if fidelity is not None:

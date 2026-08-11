@@ -1,19 +1,20 @@
 import numpy as np
 
 
-def infinite_box(grid, L_box):
-    """A flat well with infinitely high walls from 0 to L_box."""
+
+def infinite_box(grid):
+    """A flat well with infinitely high walls from 0 to L_grid."""
     U = np.zeros(grid.N)
 
-    # Set potential to 1e6 (infinity) anywhere outside the [0, L_box] range
-    U[(grid.x < 0) | (grid.x > L_box)] = 1e6
+    # Set potential to 1e6 (infinity) anywhere outside the [0, L_grid] range
+    U[(grid.x < grid.x[0]) | (grid.x > grid.x[-1])] = 1e6
 
     return U
 
 
 def harmonic_oscillator(grid, m, omega):
     """A standard parabolic trap."""
-    return 0.5 * m * (omega**2) * (grid.x - grid.L / 2) ** 2
+    return 0.5 * m * (omega**2) * (grid.x) **2
 
 
 def inharmonic_oscillator(grid, m, omega, gamma):
@@ -21,7 +22,7 @@ def inharmonic_oscillator(grid, m, omega, gamma):
     return harmonic_oscillator(grid, m, omega) + gamma * (grid.x - grid.L / 2) ** 4
 
 
-def double_gaussian(grid, U0, sigma, mu):
+def double_gaussian(grid, U0, sigma):
     """
     A double-Gaussian potential with two centered peaks or wells.
     The centers are located at x = 0 and x = L
@@ -50,8 +51,6 @@ def coulomb_and_infinite_box(grid, L_box, interacting_mu, k_coulomb=0.1, softeni
     U_total += U_coulomb
     
     return U_total
-
-import numpy as np
 
 def asymmetric_coulomb_double_well(grid, L_box, interacting_mu, depth1=-500.0, depth2=-300.0, mu1=None, mu2=None, well_sigma=0.05, k_coulomb=0.1, softening=0.05):
     """
@@ -82,6 +81,23 @@ def asymmetric_coulomb_double_well(grid, L_box, interacting_mu, depth1=-500.0, d
     U_total += U_coulomb
     
     return U_total
+def complex_absorbing_potential(grid, width=0.2, strength=100.0):
+    """
+    A complex absorbing potential (CAP) to simulate open boundary conditions.
+    The CAP is applied at the edges of the grid to absorb outgoing waves.
+    """
+    U = np.zeros(grid.N, dtype=complex)
+
+    left_bound = grid.x[0] + width
+    left_mask = grid.x < left_bound
+    U[left_mask] = strength * ((left_bound - grid.x[left_mask]) / width) ** 3
+
+    right_bound = grid.x[-1] - width
+    right_mask = grid.x > right_bound
+    U[right_mask] = strength * ((grid.x[right_mask] - right_bound) / width) ** 3
+
+    return U
+
 
 
 # def ponderomotive_trap(grid, U0, sigma):
