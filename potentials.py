@@ -49,6 +49,57 @@ def complex_absorbing_potential(grid, width=0.2, strength=100.0):
 
     return U
 
+def complex_absorbing_potential_2d(grid2d, width=0.2, strength=100.0):
+    """
+    Creates a 2D Complex Absorbing Potential (CAP) at the grid boundaries
+    to absorb the wavefunction if EITHER particle reaches the edges.
+    """
+    W = np.zeros((grid2d.N, grid2d.N))
+    
+    left_bound = grid2d.x[0] + width
+    right_bound = grid2d.x[-1] - width
+    
+    # --- Absorption for Particle 1 (x1 axis) ---
+    left_mask_1 = grid2d.x1 < left_bound
+    W[left_mask_1] += strength * ((left_bound - grid2d.x1[left_mask_1]) / width)**3
+    
+    right_mask_1 = grid2d.x1 > right_bound
+    W[right_mask_1] += strength * ((grid2d.x1[right_mask_1] - right_bound) / width)**3
+
+    # --- Absorption for Particle 2 (x2 axis) ---
+    left_mask_2 = grid2d.x2 < left_bound
+    W[left_mask_2] += strength * ((left_bound - grid2d.x2[left_mask_2]) / width)**3
+    
+    right_mask_2 = grid2d.x2 > right_bound
+    W[right_mask_2] += strength * ((grid2d.x2[right_mask_2] - right_bound) / width)**3
+    
+    return W
+
+def double_well_2d(grid2d, U0, sigma, mu):
+    """
+    Applies the double well potential independently to both particles.
+    V_total = V(x1) + V(x2)
+    """
+    
+    left_1 = np.exp(-((grid2d.x1 + mu) ** 2) / (2 * sigma**2))
+    right_1 = np.exp(-((grid2d.x1 - mu) ** 2) / (2 * sigma**2))
+    V1 = U0 * (left_1 + right_1)
+    
+    
+    left_2 = np.exp(-((grid2d.x2 + mu) ** 2) / (2 * sigma**2))
+    right_2 = np.exp(-((grid2d.x2 - mu) ** 2) / (2 * sigma**2))
+    V2 = U0 * (left_2 + right_2)
+    
+    return V1 + V2
+
+def coulomb_interaction(grid2d, k_e=1.0, softening_a=0.1):
+    """
+    Soft-core Coulomb repulsion between the two particles.
+    V = k_e / sqrt((x1 - x2)^2 + a^2)
+    """
+    distance_squared = (grid2d.x1 - grid2d.x2)**2
+    return k_e / np.sqrt(distance_squared + softening_a**2)
+
 
 
 # def ponderomotive_trap(grid, U0, sigma):
