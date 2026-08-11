@@ -18,12 +18,12 @@ if __name__ == "__main__":
     N_grid = 1000
     m = 1.0
     hbar = 1.0
-    mu = L_grid * 3 / 4
+    mu = 0.25
     sigma = 0.05
     delta = 0.1
 
     # Setup
-    grid = Grid(L_grid, N_grid)
+    grid = Grid(L_grid, N_grid, 1.0)
     potential = infinite_box(grid)
 
     # Initialize the Propagator engine
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # wf_initial.init_random_packet(mu=mu, delta=delta)
 
     # Calculate theoretical gate times
-    E1 = np.pow(np.pi * hbar, 2) / (2 * m * L_grid**2)
+    E1 = (np.pi * hbar) ** 2 / (2 * m * L_grid**2)
     # BUG: For some reason, this works better.
     E1 = prop.evals[0]
     T_h = (np.pi * hbar) / (2 * E1)
@@ -54,6 +54,10 @@ if __name__ == "__main__":
     prop.set_initial_state(wf_initial)
     prop.evolve(T_h, wf_h)
     prop.evolve(T_f, wf_f)
+
+    print(f"Grid range: min={grid.x[0]}, max={grid.x[-1]}")
+    print(f"Wavefunction norm at t=0: {np.sum(np.abs(wf_initial.psi)**2) * grid.dx}")
+    print(f"Potential min/max: {np.min(potential)}, {np.max(potential)}")
 
     # Visual validation
     print("\nSimulating...")
