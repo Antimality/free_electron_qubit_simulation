@@ -104,5 +104,10 @@ if __name__ == "__main__":
         grid2d, time_array, marginals_1, marginals_2, 
         bloch_vectors_1, bloch_vectors_2, fidelities_q1, fidelities_q2,
         center_q1, center_q2, mu, sigma_well, D, 
-        T_hold_start, T_h, fps=fps
+        T_hold_start, T_h, fps=fps,
+        gate_name="HADAMARD", 
+        gate_color="#E63946",
+        target_labels=("|+>", "|0>"),
+        title_str="Interactive Hadamard Gate Evolution",
+        jump_btn_text="Jump to Hadamard" 
     )
