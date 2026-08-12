@@ -195,3 +195,10 @@ class SplitOperatorPropagator2D:
             self.current_t = t
             
         wavefunction_out.psi = self.current_psi.copy()
+    
+    def update_potential(self, new_potential_array):
+        """
+        Dynamically updates the Hamiltonian landscape mid-simulation 
+        to apply different quantum gates.
+        """
+        self.potential = new_potential_array.astype(complex)

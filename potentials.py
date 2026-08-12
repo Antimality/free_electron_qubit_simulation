@@ -100,6 +100,24 @@ def coulomb_interaction(grid2d, k_e=1.0, softening_a=0.1):
     distance_squared = (grid2d.x1 - grid2d.x2)**2
     return k_e / np.sqrt(distance_squared + softening_a**2)
 
+def adjacent_double_wells_2d(grid2d, U0_1, U0_2, sigma, mu, D):
+    """
+    Creates two separate double-wells in 1D physical space.
+    Electron 1 is confined to the left double-well (centered at -D/2).
+    Electron 2 is confined to the right double-well (centered at +D/2).
+    """
+    # קיוביט 1 (אזור שמאלי)
+    left_1 = np.exp(-((grid2d.x1 - (-D/2 - mu)) ** 2) / (2 * sigma**2))
+    right_1 = np.exp(-((grid2d.x1 - (-D/2 + mu)) ** 2) / (2 * sigma**2))
+    V1 = U0_1 * (left_1 + right_1)
+    
+    # קיוביט 2 (אזור ימני)
+    left_2 = np.exp(-((grid2d.x2 - (D/2 - mu)) ** 2) / (2 * sigma**2))
+    right_2 = np.exp(-((grid2d.x2 - (D/2 + mu)) ** 2) / (2 * sigma**2))
+    V2 = U0_2 * (left_2 + right_2)
+    
+    return V1 + V2
+
 
 
 # def ponderomotive_trap(grid, U0, sigma):
