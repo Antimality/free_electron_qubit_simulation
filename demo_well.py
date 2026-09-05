@@ -1,16 +1,17 @@
 import time
+
 import numpy as np
 
 # Import custom modules
 from grid import Grid
 from potentials import infinite_box
-from wavefunction import Wavefunction
 from propagator import Propagator
 from visualizations import (
-    visual_results,
-    plot_waveform_evolution_2d,
     animate_combined_simulation,
+    plot_waveform_evolution_2d,
+    visual_results,
 )
+from wavefunction import Wavefunction
 
 if __name__ == "__main__":
     # Constants
@@ -18,12 +19,12 @@ if __name__ == "__main__":
     N_grid = 1000
     m = 1.0
     hbar = 1.0
-    mu = 0.25
+    mu = L_grid / 4.0
     sigma = 0.05
     delta = 0.1
 
     # Setup
-    grid = Grid(L_grid, N_grid, 1.0)
+    grid = Grid(L_grid, N_grid)
     potential = infinite_box(grid)
 
     # Initialize the Propagator engine
@@ -54,10 +55,6 @@ if __name__ == "__main__":
     prop.set_initial_state(wf_initial)
     prop.evolve(T_h, wf_h)
     prop.evolve(T_f, wf_f)
-
-    print(f"Grid range: min={grid.x[0]}, max={grid.x[-1]}")
-    print(f"Wavefunction norm at t=0: {np.sum(np.abs(wf_initial.psi)**2) * grid.dx}")
-    print(f"Potential min/max: {np.min(potential)}, {np.max(potential)}")
 
     # Visual validation
     print("\nSimulating...")

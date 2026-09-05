@@ -1,17 +1,17 @@
 import time
-import numpy as np
 
+import numpy as np
 
 # Import custom modules
 from grid import Grid
-from potentials import harmonic_oscillator, complex_absorbing_potential
-from wavefunction import Wavefunction
+from potentials import complex_absorbing_potential, harmonic_oscillator
 from propagator import Propagator
 from visualizations import (
-    visual_results,
-    plot_waveform_evolution_2d,
     animate_combined_simulation,
+    plot_waveform_evolution_2d,
+    visual_results,
 )
+from wavefunction import Wavefunction
 
 if __name__ == "__main__":
     # Constants
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     m = 1.0
     hbar = 1.0
     omega = 5.0
-    offset = L_grid / 4
+    offset = L_grid / 4.0
     sigma = 0.05
     delta = 0.1
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     real_potential = harmonic_oscillator(grid, m, omega)
     cap = complex_absorbing_potential(grid, width=0.5, strength=100.0)
-    potential = real_potential -1j*cap
+    potential = real_potential - 1j * cap
 
     # Initialize the Propagator engine
     print("Diagonalizing Hamiltonian (this may take a few seconds)...")
@@ -45,18 +45,14 @@ if __name__ == "__main__":
     # wf_initial.init_sine_wave(mu=mu, delta=delta, n_mode=5)
     # wf_initial.init_random_packet(mu=mu, delta=delta)
 
-    # Calculate theoretical gate times
-    # במקום החישוב הישן:
-    # T_f = np.pi / omega
+    # Theoretical gate time
+    T_f = np.pi * hbar / omega
 
-    E0 = np.real(prop.evals[0])
-    E1 = np.real(prop.evals[1])
-    delta_E = E1 - E0
-    
-    T_f = (np.pi * hbar) / delta_E
-    
-    print(f"Delta E (Numerical): {delta_E:.6f}")
-    print(f"Calculated T_f: {T_f:.6f}")
+    # Simulated gate time
+    # E0 = np.real(prop.evals[0])
+    # E1 = np.real(prop.evals[1])
+    # delta_E = E1 - E0
+    # T_f = (np.pi * hbar) / delta_E
 
     # Evolve
     wf_f = Wavefunction(grid)
