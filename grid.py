@@ -33,4 +33,7 @@ class Grid2D:
         self.x = np.linspace(-total_span / 2, total_span / 2, N)
         self.dx = self.x[1] - self.x[0]
 
+        self.x_max, self.x_min = self.x[-1], self.x[0]
+        self.grid_center = (self.x_max + self.x_min) / 2
+
         self.x1, self.x2 = np.meshgrid(self.x, self.x, indexing="ij")

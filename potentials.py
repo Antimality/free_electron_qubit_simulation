@@ -56,8 +56,8 @@ def complex_absorbing_potential_2d(grid2d, width=0.2, strength=100.0):
     """
     W = np.zeros((grid2d.N, grid2d.N))
 
-    left_bound = grid2d.x[0] + width
-    right_bound = grid2d.x[-1] - width
+    left_bound = grid2d.x_min + width
+    right_bound = grid2d.x_max - width
 
     # --- Absorption for Particle 1 (x1 axis) ---
     left_mask_1 = grid2d.x1 < left_bound
@@ -108,12 +108,12 @@ def adjacent_double_wells_2d(grid2d, U0_1, U0_2, sigma, mu, D):
     Electron 1 is confined to the left double-well (centered at -D/2).
     Electron 2 is confined to the right double-well (centered at +D/2).
     """
-    # קיוביט 1 (אזור שמאלי)
+    # Qubit 1 binding well
     left_1 = np.exp(-((grid2d.x1 - (-D / 2 - mu)) ** 2) / (2 * sigma**2))
     right_1 = np.exp(-((grid2d.x1 - (-D / 2 + mu)) ** 2) / (2 * sigma**2))
     V1 = U0_1 * (left_1 + right_1)
 
-    # קיוביט 2 (אזור ימני)
+    # Qubit 2 binding well
     left_2 = np.exp(-((grid2d.x2 - (D / 2 - mu)) ** 2) / (2 * sigma**2))
     right_2 = np.exp(-((grid2d.x2 - (D / 2 + mu)) ** 2) / (2 * sigma**2))
     V2 = U0_2 * (left_2 + right_2)

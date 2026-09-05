@@ -1,16 +1,16 @@
 import time
+
 import numpy as np
 
 # Import custom modules
 from grid import Grid
-from potentials import double_gaussian, complex_absorbing_potential
-from wavefunction import Wavefunction
-from propagator import Propagator, SplitOperatorPropagator 
+from potentials import complex_absorbing_potential, double_gaussian
+from propagator import Propagator, SplitOperatorPropagator
 from visualizations import (
-    visual_results,
-    plot_waveform_evolution_2d,
     animate_combined_simulation,
+    visual_results,
 )
+from wavefunction import Wavefunction
 
 if __name__ == "__main__":
     # Constants
@@ -18,18 +18,18 @@ if __name__ == "__main__":
     N_grid = 1000
     m = 1.0
     hbar = 1.0
-    mu = 0.4        
-    sigma = 0.12    
+    mu = 0.4
+    sigma = 0.12
     U0 = -100.0
 
 # Setup
 grid = Grid(L_grid, N_grid, 7.0)
 real_potential = double_gaussian(grid, U0=U0, sigma=sigma, mu=mu)
 abso = complex_absorbing_potential(grid, width=0.2, strength=100.0)
-potential = real_potential - 1j * abso  
+potential = real_potential - 1j * abso
 
 
-#step 1: compute the states and the gate times
+# step 1: compute the states and the gate times
 print("Diagonalizing Hamiltonian for static analysis...")
 start_time = time.time()
 static_prop = Propagator(grid, potential, m=m, hbar=hbar)
@@ -48,18 +48,18 @@ psi_0 = static_prop.evecs[:, 0].copy()
 psi_1 = static_prop.evecs[:, 1].copy()
 
 idx_right = np.argmin(np.abs(grid.x - mu))
-if np.real(psi_0[idx_right]) < 0: 
+if np.real(psi_0[idx_right]) < 0:
     psi_0 = -psi_0
 if np.real(psi_1[idx_right]) < 0:
     psi_1 = -psi_1
 
 localized_psi = (psi_0 + psi_1) / np.sqrt(2.0)
-norm = np.sqrt(np.sum(np.abs(localized_psi)**2) * grid.dx)
+norm = np.sqrt(np.sum(np.abs(localized_psi) ** 2) * grid.dx)
 
 wf_initial = Wavefunction(grid)
 wf_initial.psi = localized_psi / norm
 
-#step 2: dainamic evolution using the Split-Operator method
+# step 2: dainamic evolution using the Split-Operator method
 print("\nInitializing Split-Operator engine for time dynamics...")
 dyn_prop = SplitOperatorPropagator(grid, potential, m=m, hbar=hbar)
 dyn_prop.set_initial_state(wf_initial)
@@ -73,12 +73,12 @@ print("\nEvolving wavefunction...")
 dyn_prop.evolve(T_h, wf_h, dt=0.001)
 dyn_prop.evolve(T_f, wf_f, dt=0.001)
 
-#step 3:  results visualization
+# step 3:  results visualization
 print("\nSimulating results...")
 visual_results(
     grid,
     wf_initial,
-    dyn_prop,  
+    dyn_prop,
     wf_h=wf_h,
     wf_f=wf_f,
     T_h=T_h,
@@ -94,5 +94,5 @@ animate_combined_simulation(
     T_h=T_h,
     T_f=T_f,
     fps=30,
-    y_lim=(-5.0, 6.0), 
+    y_lim=(-5.0, 6.0),
 )
