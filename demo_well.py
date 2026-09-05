@@ -1,16 +1,17 @@
 import time
+
 import numpy as np
 
 # Import custom modules
 from grid import Grid
 from potentials import infinite_box
-from wavefunction import Wavefunction
 from propagator import Propagator
 from visualizations import (
-    visual_results,
-    plot_waveform_evolution_2d,
     animate_combined_simulation,
+    plot_waveform_evolution_2d,
+    visual_results,
 )
+from wavefunction import Wavefunction
 
 if __name__ == "__main__":
     # Constants
@@ -18,13 +19,13 @@ if __name__ == "__main__":
     N_grid = 1000
     m = 1.0
     hbar = 1.0
-    mu = L_grid * 3 / 4
+    mu = L_grid / 4.0
     sigma = 0.05
     delta = 0.1
 
     # Setup
     grid = Grid(L_grid, N_grid)
-    potential = infinite_box(grid, L_grid)
+    potential = infinite_box(grid)
 
     # Initialize the Propagator engine
     print("Diagonalizing Hamiltonian (this may take a few seconds)...")
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     # wf_initial.init_random_packet(mu=mu, delta=delta)
 
     # Calculate theoretical gate times
-    E1 = np.pow(np.pi * hbar, 2) / (2 * m * L_grid**2)
+    E1 = (np.pi * hbar) ** 2 / (2 * m * L_grid**2)
     # BUG: For some reason, this works better.
     E1 = prop.evals[0]
     T_h = (np.pi * hbar) / (2 * E1)

@@ -180,8 +180,12 @@ class Wavefunction:
 
         # חישוב הסתברויות מתוקן לחצי רשת
         density = self.get_probability_density()
-        dx = self.grid.dx if hasattr(self.grid, "dx") else (self.grid.x[1] - self.grid.x[0])
-        
+        dx = (
+            self.grid.dx
+            if hasattr(self.grid, "dx")
+            else (self.grid.x[1] - self.grid.x[0])
+        )
+
         p0 = np.sum(density[mask0]) * dx
         p1 = np.sum(density[mask1]) * dx
 
@@ -191,8 +195,8 @@ class Wavefunction:
 
         # בניית האמפליטודות תוך שמירה על המידע של הפאזה (הכרחי לתנועה על קו המשווה)
         alpha = np.sqrt(p0) * np.exp(1j * phase_0)
-        beta  = np.sqrt(p1) * np.exp(1j * phase_1)
+        beta = np.sqrt(p1) * np.exp(1j * phase_1)
 
         qubit_state = qt.Qobj([[alpha], [beta]])
-        
+
         return qubit_state.unit()
