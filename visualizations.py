@@ -1,13 +1,12 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from matplotlib.widgets import Slider, Button
+import numpy as np
 import qutip as qt
+from matplotlib.animation import FuncAnimation
+from matplotlib.widgets import Button, Slider
 
-from wavefunction import Wavefunction
-from metrics import get_fidelity, get_ideal_bitflip, get_ideal_hadamard
 from gate_finder import find_bit_flip_time, find_hadamard_time
-
+from metrics import get_fidelity, get_ideal_bitflip, get_ideal_hadamard
+from wavefunction import Wavefunction
 
 # ==========================================
 # Helper Functions for Code Reuse
@@ -51,42 +50,37 @@ def _precompute_evolution(grid, prop, time_array):
     densities = []
     bloch_states = []
     current_wf = Wavefunction(grid)
-    import qutip as qt 
-    
-    
+    import qutip as qt
+
     psi_0 = prop.evecs[:, 0].copy()
     psi_1 = prop.evecs[:, 1].copy()
-    
-   
-    idx_right = np.argmin(np.abs(grid.x - 0.4)) 
-    if np.real(psi_0[idx_right]) < 0: psi_0 = -psi_0
-    if np.real(psi_1[idx_right]) < 0: psi_1 = -psi_1
-    
-    basis_1 = (psi_0 + psi_1) / np.sqrt(2.0) 
-    basis_0 = (psi_0 - psi_1) / np.sqrt(2.0) 
+
+    idx_right = np.argmin(np.abs(grid.x - 0.4))
+    if np.real(psi_0[idx_right]) < 0:
+        psi_0 = -psi_0
+    if np.real(psi_1[idx_right]) < 0:
+        psi_1 = -psi_1
+
+    basis_1 = (psi_0 + psi_1) / np.sqrt(2.0)
+    basis_0 = (psi_0 - psi_1) / np.sqrt(2.0)
 
     for t in time_array:
         prop.evolve(t, current_wf)
-        densities.append(np.abs(current_wf.psi)**2)
-        
-       
+        densities.append(np.abs(current_wf.psi) ** 2)
+
         c_0 = np.dot(np.conj(basis_0), current_wf.psi) * grid.dx
         c_1 = np.dot(np.conj(basis_1), current_wf.psi) * grid.dx
-        
-       
-        norm = np.sqrt(np.abs(c_0)**2 + np.abs(c_1)**2)
+
+        norm = np.sqrt(np.abs(c_0) ** 2 + np.abs(c_1) ** 2)
         if norm > 0:
             c_0 /= norm
             c_1 /= norm
-            
+
         state = c_0 * qt.basis(2, 0) + c_1 * qt.basis(2, 1)
         bloch_states.append(state)
 
     return densities, bloch_states
 
-import numpy as np
-from matplotlib.widgets import Slider, Button
-from matplotlib.animation import FuncAnimation
 
 def _build_interactive_animation(
     fig, time_array, update_func, frame_interval_ms, T_h=None, T_f=None
@@ -100,10 +94,10 @@ def _build_interactive_animation(
 
     # Slider width is 0.70 (0.15 to 0.85). Buttons are spaced evenly underneath it.
     ax_slider = fig.add_axes([0.15, 0.12, 0.7, 0.03])
-    
-    ax_play   = fig.add_axes([0.15, 0.04, 0.10, 0.05])
-    ax_step   = fig.add_axes([0.27, 0.04, 0.10, 0.05])
-    ax_reset  = fig.add_axes([0.39, 0.04, 0.10, 0.05])
+
+    ax_play = fig.add_axes([0.15, 0.04, 0.10, 0.05])
+    ax_step = fig.add_axes([0.27, 0.04, 0.10, 0.05])
+    ax_reset = fig.add_axes([0.39, 0.04, 0.10, 0.05])
 
     slider = Slider(ax_slider, "Time", 0, time_array[-1], valinit=0, color="#003366")
     btn_play = Button(ax_play, "Pause", hovercolor="0.975")
@@ -114,16 +108,16 @@ def _build_interactive_animation(
 
     # --- Setup Conditional Jump Buttons ---
     btn_h, btn_f = None, None
-    
+
     # Start positioning dynamic buttons after the Reset button (0.39 + 0.10 width + 0.02 spacing)
-    next_x = 0.51 
-    
+    next_x = 0.51
+
     if T_h is not None and T_h > 0:
         ax_h = fig.add_axes([next_x, 0.04, 0.15, 0.05])
         btn_h = Button(ax_h, "Hadamard", hovercolor="0.975")
         btn_h.on_clicked(lambda event: slider.set_val(T_h))
         next_x += 0.17  # Move next_x right by button width (0.15) + spacing (0.02)
-        
+
     if T_f is not None and T_f > 0:
         ax_f = fig.add_axes([next_x, 0.04, 0.15, 0.05])
         btn_f = Button(ax_f, "Bit Flip", hovercolor="0.975")
@@ -192,12 +186,10 @@ def _build_interactive_animation(
 
     return anim, (slider, btn_play, btn_step, btn_reset, btn_h, btn_f, state)
 
+
 def _setup_1d_axis(ax, grid, prop, initial_wf, y_lim=None, T_h=None, T_f=None):
     """Configures the 1D spatial evolution subplot and draws static overlays."""
-    x_min, x_max = grid.x[0], grid.x[-1]
-    grid_center = (x_min + x_max) / 2
-    
-    ax.set_xlim(x_min, x_max)
+    ax.set_xlim(grid.x_min, grid.x_max)
     if isinstance(y_lim, tuple):
         ax.set_ylim(y_lim)
     elif y_lim is not None:
@@ -208,12 +200,12 @@ def _setup_1d_axis(ax, grid, prop, initial_wf, y_lim=None, T_h=None, T_f=None):
     ax.set_title("Spatial Wavefunction Evolution", fontsize=14, fontweight="bold")
     ax.grid(alpha=0.3)
 
-    ax.axvline(0.0, color="red", linestyle="--", alpha=0.6, lw=1.5)
+    ax.axvline(grid.grid_center, color="red", linestyle="--", alpha=0.6, lw=1.5)
 
     if hasattr(prop, "potential"):
         ax.plot(
             grid.x,
-            prop.potential, 
+            prop.potential,
             color="black",
             linestyle="-",
             lw=2,
@@ -315,9 +307,6 @@ def visual_results(
     T_f=None,
     max_search_time=1000.0,
 ):
-    x_min, x_max = grid.x[0], grid.x[-1]
-    grid_center = (x_min + x_max) / 2
-
     assert (wf_h is not None) or (wf_f is not None)
 
     if wf_h is not None:
@@ -335,7 +324,7 @@ def visual_results(
         T_f, _ = find_bit_flip_time(prop, wf_initial, max_time_search=max_search_time)
 
     subplots = 1 + (wf_h is not None) + (wf_f is not None)
-    fig, axs = plt.subplots(1, subplots, figsize=(18, 5), sharey=True)
+    _, axs = plt.subplots(1, subplots, figsize=(18, 5), sharey=True)
 
     if not isinstance(axs, np.ndarray):
         axs = [axs]
@@ -383,15 +372,15 @@ def visual_results(
         density = np.abs(psi) ** 2
         ax.plot(grid.x, density, color="#003366", lw=2)
         ax.fill_between(grid.x, density, color="#003366", alpha=0.2)
-        ax.axvline(0.0, color="red", linestyle="--", alpha=0.6)
+        ax.axvline(grid.grid_center, color="red", linestyle="--", alpha=0.6)
 
         ax.set_title(title, fontsize=14)
         ax.set_xlabel("Position (x)")
-        ax.set_xlim(x_min, x_max)
+        ax.set_xlim(grid.x_min, grid.x_max)
         ax.grid(alpha=0.3)
 
         if fidelity is not None:
-            props = dict(boxstyle="round", facecolor="wheat", alpha=0.8)
+            props = {"boxstyle": "round", "facecolor": "wheat", "alpha": 0.8}
             ax.text(
                 0.05,
                 0.95,
@@ -521,7 +510,7 @@ def animate_combined_simulation(
         ha="center",
         va="center",
         fontsize=14,
-        bbox=dict(facecolor="white", alpha=0.8, edgecolor="none"),
+        bbox={"facecolor": "white", "alpha": 0.8, "edgecolor": "none"},
     )
 
     time_array, frame_interval_ms = _build_time_array(total_time, fps)

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import eigh, eig
+from scipy.linalg import eig, eigh
 
 
 class Propagator:
@@ -48,7 +48,7 @@ class Propagator:
         if np.iscomplexobj(self.potential):
             # For non-Hermitian systems, eigenvectors are not orthogonal.
             # We solve the linear system: evecs * c_n = psi
-            self.c_n = np.linalg.solve(self.evecs, wavefunction.psi) 
+            self.c_n = np.linalg.solve(self.evecs, wavefunction.psi)
         else:
             # c_n = integral( evec_n^* * psi(x,0) ) dx
             self.c_n = np.dot(np.conj(self.evecs.T), wavefunction.psi) * self.dx
