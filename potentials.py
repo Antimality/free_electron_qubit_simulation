@@ -31,6 +31,19 @@ def double_gaussian(grid, U0, sigma):
     return U0 * (left_peak + right_peak)
 
 
+def gaussian_walls(grid, U0, sigma, wall_pos):
+    """
+    Creates an approximate infinite well using two Gaussian peaks.
+    """
+    # Left wall at -wall_pos
+    left_wall = np.exp(-((grid.x + wall_pos) ** 2) / (2 * sigma**2))
+
+    # Right wall at +wall_pos
+    right_wall = np.exp(-((grid.x - wall_pos) ** 2) / (2 * sigma**2))
+
+    return U0 * (left_wall + right_wall)
+
+
 def complex_absorbing_potential(grid, width=0.2, strength=100.0):
     """
     A complex absorbing potential (CAP) to simulate open boundary conditions.
