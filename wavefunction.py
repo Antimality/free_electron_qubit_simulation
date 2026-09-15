@@ -172,28 +172,19 @@ class Wavefunction:
         except ImportError:
             raise ImportError("The 'qutip' library is required.")
 
-        # מציאת מרכז המרחב כדי להפריד בין צד ימין לצד שמאל
-        grid_center = self.grid.x[-1] / 2.0
+        mask0 = self.grid.x < self.grid.center
+        mask1 = self.grid.x >= self.grid.center
 
-        mask0 = self.grid.x < grid_center
-        mask1 = self.grid.x >= grid_center
-
-        # חישוב הסתברויות מתוקן לחצי רשת
         density = self.get_probability_density()
-        dx = (
-            self.grid.dx
-            if hasattr(self.grid, "dx")
-            else (self.grid.x[1] - self.grid.x[0])
-        )
 
-        p0 = np.sum(density[mask0]) * dx
-        p1 = np.sum(density[mask1]) * dx
+        p0 = np.sum(density[mask0]) * self.grid.dx
+        p1 = np.sum(density[mask1]) * self.grid.dx
 
-        # חילוץ הפאזה הממוצעת משני צידי הפוטנציאל
+        # Average phase for each qubit
         phase_0 = np.angle(np.sum(self.psi[mask0])) if p0 > 1e-12 else 0.0
         phase_1 = np.angle(np.sum(self.psi[mask1])) if p1 > 1e-12 else 0.0
 
-        # בניית האמפליטודות תוך שמירה על המידע של הפאזה (הכרחי לתנועה על קו המשווה)
+        # Construct the amplitudes while preserving phase information (crucial for equatorial motion)
         alpha = np.sqrt(p0) * np.exp(1j * phase_0)
         beta = np.sqrt(p1) * np.exp(1j * phase_1)
 

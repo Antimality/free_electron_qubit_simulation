@@ -6,7 +6,7 @@ from matplotlib.widgets import Button, Slider
 
 
 def get_local_qutip_qubit(wf, center_q1, center_q2):
-    """מחשב את מטריצות הצפיפות המקומיות (הועבר לכאן לשימוש חוזר)"""
+    """Calculates local density matrix"""
     density = np.abs(wf.psi) ** 2
     dx2 = wf.grid.dx**2
 
@@ -34,7 +34,7 @@ def _build_interactive_animation(
     T_target=None,
     jump_btn_text="Jump to Gate",
 ):
-    """בונה את ממשק המשתמש התחתון (סליידר, כפתורי נגינה, קפיצה לזמן)"""
+    """Builds the lower user interface (slider, play buttons, jump to time)"""
     fig.subplots_adjust(bottom=0.25)
 
     ax_slider = fig.add_axes([0.15, 0.12, 0.7, 0.03])
@@ -52,7 +52,6 @@ def _build_interactive_animation(
     btn_jump = None
     if T_target is not None:
         ax_jump = fig.add_axes([0.51, 0.04, 0.18, 0.05])
-        # שימוש בטקסט הדינמי שהועבר לפונקציה
         btn_jump = Button(ax_jump, jump_btn_text, hovercolor="0.975")
         btn_jump.on_clicked(lambda event: slider.set_val(T_target))
 
@@ -132,7 +131,7 @@ def visual_results_2d(
     title_str="Final State Snapshot",
 ):
     """
-    מייצר Snapshot סטטי של סוף התהליך, עם תמיכה בתוויות דינמיות לשערים שונים.
+    Creates a snapshot of the final state, with support for dynamic labels for different gates.
     """
     fig = plt.figure(figsize=(15, 6))
     plt.suptitle(title_str, fontsize=16, fontweight="bold")
@@ -141,7 +140,7 @@ def visual_results_2d(
     ax_bloch = fig.add_subplot(1, 2, 2, projection="3d")
     b = qt.Bloch(fig=fig, axes=ax_bloch)
 
-    # חישוב השוליות למצב הסופי
+    # Margins for final state
     density_2d = np.abs(wf.psi) ** 2
     marginal_1 = np.sum(density_2d, axis=1) * wf.grid.dx
     marginal_2 = np.sum(density_2d, axis=0) * wf.grid.dx
@@ -158,7 +157,7 @@ def visual_results_2d(
         label="Qubit 2 (Control)",
     )
 
-    # סימון אזורים
+    # Spacial division lines
     ax_spatial.hlines(
         0,
         center_q1 - mu - sigma,
@@ -205,7 +204,7 @@ def visual_results_2d(
     ax_spatial.legend(loc="upper right", fontsize=9)
     ax_spatial.grid(True, alpha=0.2)
 
-    # הצגת פידליטי עם תוויות דינמיות
+    # Fidelity display
     fid_q1, fid_q2 = fidelities_tuple
     props = {"boxstyle": "round", "facecolor": "wheat", "alpha": 0.8}
     ax_spatial.text(
@@ -217,7 +216,7 @@ def visual_results_2d(
         bbox=props,
     )
 
-    # עדכון ספירת בלוך
+    # Bloch Sphere update
     state_2q = get_local_qutip_qubit(wf, center_q1, center_q2)
     rho_2q = state_2q * state_2q.dag()
     rho_1 = rho_2q.ptrace(0)
@@ -264,10 +263,10 @@ def animate_combined_simulation_2d(
     gate_color="#E63946",
     target_labels=("|+>", "|0>"),
     title_str="Interactive Evolution",
-    jump_btn_text="Jump to Gate",  # הוספת פרמטר עבור הכפתור
+    jump_btn_text="Jump to Gate",
 ):
     """
-    אנימציה גנרית התומכת בשמות שערים, צבעים וטקסט כפתור משתנים.
+    Generic animation supporting variable gate names, colors, and button text.
     """
     fig = plt.figure(figsize=(15, 7.5))
     ax_spatial = fig.add_subplot(1, 2, 1)
@@ -396,13 +395,13 @@ def animate_cnot_circuit_2d(
     fps=30,
 ):
     """
-    אנימציה מתקדמת הכוללת 3 פאנלים: תרשים מעגל דינמי (למעלה),
-    מרחב פיזיקלי (למטה משמאל), וספירת בלוך (למטה מימין).
+    Advanced animation including 3 panels: dynamic circuit diagram (top),
+    physical space (bottom left), and Bloch sphere (bottom right).
     """
     fig = plt.figure(figsize=(16, 9))
     gs = fig.add_gridspec(2, 2, height_ratios=[1, 2.5])
 
-    # חלוקת האזורים
+    # Create subplots
     ax_circuit = fig.add_subplot(gs[0, :])
     ax_spatial = fig.add_subplot(gs[1, 0])
     ax_bloch = fig.add_subplot(gs[1, 1], projection="3d")
@@ -410,13 +409,13 @@ def animate_cnot_circuit_2d(
     b.make_sphere()
 
     # ---------------------------------------------------------
-    # בניית תרשים המעגל הקוונטי (Circuit Diagram)
+    # Circuit Diagram
     # ---------------------------------------------------------
     ax_circuit.axis("off")
     ax_circuit.set_xlim(-1, 5)
     ax_circuit.set_ylim(-0.5, 1.5)
 
-    # קווים ראשיים (Qubits)
+    # Main lines (Qubits)
     ax_circuit.plot([0, 4.5], [1, 1], color="black", lw=2, zorder=1)  # Q2 (Control)
     ax_circuit.plot([0, 4.5], [0, 0], color="black", lw=2, zorder=1)  # Q1 (Target)
     ax_circuit.text(
@@ -426,7 +425,7 @@ def animate_cnot_circuit_2d(
         -0.2, 0, "Q1 (Target)", va="center", ha="right", fontsize=12, fontweight="bold"
     )
 
-    # שער הדמרד ראשון
+    # H1 gate
     rect_h1 = plt.Rectangle(
         (0.7, -0.3),
         0.6,
@@ -450,12 +449,12 @@ def animate_cnot_circuit_2d(
         zorder=4,
     )
 
-    # שער CZ
+    # CZ gate
     (line_cz,) = ax_circuit.plot([2.5, 2.5], [0, 1], color="black", lw=2.5, zorder=2)
     dot_cz1 = ax_circuit.scatter([2.5], [1.0], color="black", s=150, zorder=3)
     dot_cz2 = ax_circuit.scatter([2.5], [0.0], color="black", s=150, zorder=3)
 
-    # שער הדמרד שני
+    # H2 gate
     rect_h2 = plt.Rectangle(
         (3.7, -0.3),
         0.6,
@@ -480,7 +479,7 @@ def animate_cnot_circuit_2d(
     )
 
     # ---------------------------------------------------------
-    # ציור המרחב הפיזיקלי
+    # Draw physical space panel
     # ---------------------------------------------------------
     (line_p1,) = ax_spatial.plot([], [], color="#E63946", lw=2.5, label="Q1 (Target)")
     (line_p2,) = ax_spatial.plot(
@@ -537,13 +536,13 @@ def animate_cnot_circuit_2d(
         bbox={"facecolor": "white", "alpha": 0.8},
     )
 
-    # פירוק זמנים
+    # Scheduled time for each gate operation
     t_h1_start, _, t_cz_start, _, t_h2_start, _ = time_schedule
 
     def update(frame):
         t = time_array[frame]
 
-        # עדכון גרפים
+        # Update Graphs
         line_p1.set_data(grid2d.x, marginals_1[frame])
         line_p2.set_data(grid2d.x, marginals_2[frame])
         time_text.set_text(f"Time $t = {t:.2f}$")
@@ -551,10 +550,10 @@ def animate_cnot_circuit_2d(
             f"Fidelity to Target State (|11>):\nQ1 (|1>): {fidelities_q1[frame]:.4f}\nQ2 (|1>): {fidelities_q2[frame]:.4f}"
         )
 
-        # --- עדכון צבעי המעגל הקוונטי לפי התקדמות הזמן ---
+        # --- Update gate colors based on time ---
         blue_col = "#457B9D"
 
-        # הדמרד ראשון
+        # H1 gate
         if t >= t_h1_start:
             rect_h1.set_edgecolor(blue_col)
             text_h1.set_color(blue_col)
@@ -562,7 +561,7 @@ def animate_cnot_circuit_2d(
             rect_h1.set_edgecolor("black")
             text_h1.set_color("black")
 
-        # שער CZ
+        # CZ gate
         if t >= t_cz_start:
             line_cz.set_color(blue_col)
             dot_cz1.set_color(blue_col)
@@ -572,7 +571,7 @@ def animate_cnot_circuit_2d(
             dot_cz1.set_color("black")
             dot_cz2.set_color("black")
 
-        # הדמרד שני
+        # H2 gate
         if t >= t_h2_start:
             rect_h2.set_edgecolor(blue_col)
             text_h2.set_color(blue_col)
@@ -580,7 +579,7 @@ def animate_cnot_circuit_2d(
             rect_h2.set_edgecolor("black")
             text_h2.set_color("black")
 
-        # עדכון בלוך
+        # Update Bloch sphere
         b.vectors = []
         b.add_vectors(bloch_vectors_1[frame])
         b.add_vectors(bloch_vectors_2[frame])
