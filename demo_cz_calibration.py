@@ -18,7 +18,7 @@ from wavefunction import Wavefunction2D
 
 def init_cz_state(wf, center_q1, center_q2, mu, sigma):
     """
-    Initializes the wavefunction for a two-qubit system in the |+>|0> state.
+    Initializes the wavefunction for a two-qubit system in the |+>|1> state.
     """
     x1 = wf.grid.x1
     x2 = wf.grid.x2
@@ -33,6 +33,7 @@ def init_cz_state(wf, center_q1, center_q2, mu, sigma):
     wf.psi /= np.sqrt(np.sum(np.abs(wf.psi) ** 2) * wf.grid.dx**2)
 
 
+# TODO: Make this NOT virtual
 def apply_virtual_z(wf, center_q1, center_q2, theta_1, theta_2):
     """
     Applies virtual Z corrections to the wavefunction for a two-qubit system.
@@ -116,12 +117,12 @@ if __name__ == "__main__":
 
     # --- Step 3: Pre-Compute Evolution ---
     print("Pre-computing quantum evolution... Please wait.")
-    T_hold_start = 1.0
-    T_hold_end = 1.0
+    T_hold_start = 0.0
+    T_hold_end = 0.0
     total_time = T_hold_start + T_cz + T_hold_end
 
     fps = 30
-    dt_anim = 0.1
+    dt_anim = 0.005
     time_steps = int(total_time / dt_anim)
     time_array = np.linspace(0, total_time, time_steps)
 
@@ -140,10 +141,11 @@ if __name__ == "__main__":
             # Phase correction is applied (exactly) once after CZ gate
             if not z_corrected:
                 apply_virtual_z(current_wf, center_q1, center_q2, theta_1, theta_2)
+                prop2d.set_initial_state(current_wf)
                 z_corrected = True
             prop2d.update_potential(V_hold)
 
-        prop2d.evolve(t, current_wf, dt=0.005)
+        prop2d.evolve(t, current_wf, dt=dt_anim)
 
         density_2d = np.abs(current_wf.psi) ** 2
         marginals_1.append(np.sum(density_2d, axis=1) * grid2d.dx)

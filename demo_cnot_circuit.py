@@ -53,6 +53,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------
     T_hold = 0.8
 
+    # BUG: H1 Takes Q1 from |0> to +Y instead of +X
     t_h1_start = T_hold
     t_h1_end = t_h1_start + T_h
 
@@ -120,6 +121,7 @@ if __name__ == "__main__":
         else:
             if t >= t_cz_end and not z_corrected:
                 apply_virtual_z(current_wf, center_q1, center_q2, theta_1, theta_2)
+                prop2d.set_initial_state(current_wf)
                 z_corrected = True
             prop2d.update_potential(V_hold)
 
