@@ -31,6 +31,8 @@ if __name__ == "__main__":
     U0_hold = -200.0
     U0_tunnel = -100.0
 
+    dU = 10.0 #different potential between the wells for phase shift
+
     # --- Step 1: Calibration ---
     print("Calibrating exact Hadamard time...")
     grid1d = Grid(L_grid, N_grid, padding_mult=padding_val)
@@ -59,6 +61,13 @@ if __name__ == "__main__":
         )
         - 1j * abso
     )
+    
+    V_phase_shift = (
+        adjacent_double_wells_2d(
+            grid2d, U0_1=U0_hold, U0_2=U0_hold , sigma=sigma_well, mu=mu, D=D, dU1 = dU
+        )
+        - 1j * abso
+    )
 
     wf_initial = Wavefunction2D(grid2d)
     center_q1, center_q2 = -D / 2.0, D / 2.0
@@ -68,17 +77,19 @@ if __name__ == "__main__":
     prop2d.set_initial_state(wf_initial)
     current_wf = Wavefunction2D(grid2d)
 
-    target_state_q1 = (qt.basis(2, 0) + 1j * qt.basis(2, 1)).unit()
+    target_state_q1 = (qt.basis(2, 0) + qt.basis(2, 1)).unit()
     target_state_q2 = qt.basis(2, 0)
 
     # --- Step 3: Pre-Compute Evolution ---
     print("Pre-computing quantum evolution... Please wait.")
-    T_hold_start = 2.0
-    T_hold_end = 2.0
-    total_time = T_hold_start + T_h + T_hold_end
+    T_hold_start = 1.0
+    T_hold_end = 0.0
+    T_phase = (np.pi * hbar) / (2.0 * dU)
+    total_time = T_hold_start + T_h + T_phase + T_hold_end
+
 
     fps = 30
-    dt_anim = 0.1
+    dt_anim = 0.01
     time_steps = int(total_time / dt_anim)
     time_array = np.linspace(0, total_time, time_steps)
 
@@ -87,10 +98,12 @@ if __name__ == "__main__":
     fidelities_q1, fidelities_q2 = [], []
 
     for t in time_array:
-        if t < T_hold_start:
+        if t <= T_hold_start:
             prop2d.update_potential(V_hold)
-        elif t < T_hold_start + T_h:
+        elif t <= T_hold_start + T_h:
             prop2d.update_potential(V_hadamard_q1)
+        elif t <= T_hold_start + T_h + T_phase:
+            prop2d.update_potential(V_phase_shift)
         else:
             prop2d.update_potential(V_hold)
 
