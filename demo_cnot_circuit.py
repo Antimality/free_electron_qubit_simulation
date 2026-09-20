@@ -12,14 +12,6 @@ from propagator import Propagator, SplitOperatorPropagator2D
 from visualizations_2d import animate_cnot_circuit_2d, get_local_qutip_qubit
 from wavefunction import Wavefunction2D
 
-
-def apply_virtual_z(wf, center_q1, center_q2, theta_1, theta_2):
-    step_1 = 0.5 * (1.0 + np.tanh((wf.grid.x1 - center_q1) / 0.05))
-    step_2 = 0.5 * (1.0 + np.tanh((wf.grid.x2 - center_q2) / 0.05))
-    phase_mask = theta_1 * step_1 + theta_2 * step_2
-    wf.psi *= np.exp(1j * phase_mask)
-
-
 if __name__ == "__main__":
     # ---------------------------------------------------------
     # Intialization and gate calibration
@@ -72,14 +64,26 @@ if __name__ == "__main__":
     t_cz_start = t_h1_p2_end + T_hold
     t_cz_end = t_cz_start + T_cz
 
+    # Physical Z-Correction Gate
+    T_z_corr = T_phase  # Reusing the Hadamard phase timing for consistency
+    t_z_corr_start = t_cz_end + T_hold
+    t_z_corr_end = t_z_corr_start + T_z_corr
+
     # H2 Gate: Phase -> Tunnel -> Phase
-    t_h2_p1_start = t_cz_end + T_hold
+    t_h2_p1_start = t_z_corr_end + T_hold
     t_h2_p1_end = t_h2_p1_start + T_phase
     t_h2_tun_end = t_h2_p1_end + T_h
     t_h2_p2_end = t_h2_tun_end + T_phase
 
     total_time = t_h2_p2_end + T_hold
-    time_schedule = (t_h1_p1_start, t_h1_p2_end, t_cz_start, t_cz_end, t_h2_p1_start, t_h2_p2_end)
+    time_schedule = (
+        t_h1_p1_start,
+        t_h1_p2_end,
+        t_cz_start,
+        t_cz_end,
+        t_h2_p1_start,
+        t_h2_p2_end,
+    )
     # ---------------------------------------------------------
     # Simulation/Visualization
     # ---------------------------------------------------------
@@ -107,10 +111,27 @@ if __name__ == "__main__":
 
     V_cz = V_hold + coulomb_interaction(grid2d, k_e=k_e, softening_a=0.1)
 
+    dU1_z = -(theta_1 * hbar) / T_z_corr
+    dU2_z = -(theta_2 * hbar) / T_z_corr
+
+    V_z_corr = (
+        adjacent_double_wells_2d(
+            grid2d,
+            U0_1=U0_hold,
+            U0_2=U0_hold,
+            sigma=sigma_well,
+            mu=mu,
+            D=D,
+            dU1=dU1_z,
+            dU2=dU2_z,
+        )
+        - 1j * abso
+    )
+
     wf_initial = Wavefunction2D(grid2d)
     center_q1, center_q2 = -D / 2.0, D / 2.0
 
-    # Initialization to |01> state 
+    # Initialization to |01> state
     wf_initial.init_gaussian(mu1=center_q1 - mu, mu2=center_q2 + mu, sigma=sigma_init)
     current_wf = Wavefunction2D(grid2d)
 
@@ -129,8 +150,6 @@ if __name__ == "__main__":
     bloch_vectors_1, bloch_vectors_2 = [], []
     fidelities_q1, fidelities_q2 = [], []
 
-    z_corrected = False
-
     print("Pre-computing complete CNOT quantum circuit... Please wait.")
     for t in time_array:
         # --- H1 Gate (Z -> X -> Z) ---
@@ -142,21 +161,23 @@ if __name__ == "__main__":
             prop2d.update_potential(V_hadamard_q1)
         elif t <= t_h1_p2_end:
             prop2d.update_potential(V_phase_shift)
-        
+
         # --- CZ Gate ---
         elif t < t_cz_start:
             prop2d.update_potential(V_hold)
         elif t <= t_cz_end:
             prop2d.update_potential(V_cz)
-        
-        # --- Hold between CZ and H2 (Apply Virtual Z here) ---
-        elif t < t_h2_p1_start:
-            if not z_corrected:
-                apply_virtual_z(current_wf, center_q1, center_q2, theta_1, theta_2)
-                prop2d.set_initial_state(current_wf)
-                z_corrected = True
+
+        # --- Physical Z-Correction Gate ---
+        elif t < t_z_corr_start:
             prop2d.update_potential(V_hold)
-        
+        elif t <= t_z_corr_end:
+            prop2d.update_potential(V_z_corr)
+
+        # --- Hold between Z-Correction and H2 ---
+        elif t < t_h2_p1_start:
+            prop2d.update_potential(V_hold)
+
         # --- H2 Gate (Z -> X -> Z) ---
         elif t <= t_h2_p1_end:
             prop2d.update_potential(V_phase_shift)
@@ -164,7 +185,7 @@ if __name__ == "__main__":
             prop2d.update_potential(V_hadamard_q1)
         elif t <= t_h2_p2_end:
             prop2d.update_potential(V_phase_shift)
-        
+
         # --- Final Hold ---
         else:
             prop2d.update_potential(V_hold)
