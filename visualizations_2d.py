@@ -599,3 +599,415 @@ def animate_cnot_circuit_2d(
     )
     plt.show()
     return anim, controls
+
+
+def _build_dynamic_interactive_animation(
+    fig,
+    time_array,
+    update_func,
+    frame_interval_ms,
+    gate_schedule=None,
+):
+    """Builds the expanded lower user interface with frame stepping and gate jumping."""
+    fig.subplots_adjust(bottom=0.25)
+
+    # UI Axis Definitions
+    ax_step_b = fig.add_axes([0.10, 0.12, 0.04, 0.03])
+    ax_slider = fig.add_axes([0.15, 0.12, 0.70, 0.03])
+    ax_step_f = fig.add_axes([0.86, 0.12, 0.04, 0.03])
+
+    ax_play = fig.add_axes([0.22, 0.04, 0.12, 0.05])
+    ax_reset = fig.add_axes([0.37, 0.04, 0.10, 0.05])
+    ax_end = fig.add_axes([0.50, 0.04, 0.10, 0.05])
+    ax_next = fig.add_axes([0.63, 0.04, 0.15, 0.05])
+
+    # Instantiate Elements
+    btn_step_b = Button(ax_step_b, "<", hovercolor="0.975")
+    slider = Slider(ax_slider, "", 0, time_array[-1], valinit=0, color="#003366")
+    btn_step_f = Button(ax_step_f, ">", hovercolor="0.975")
+
+    btn_play = Button(ax_play, "Pause", hovercolor="0.975")
+    btn_reset = Button(ax_reset, "Reset", hovercolor="0.975")
+    btn_end = Button(ax_end, "End", hovercolor="0.975")
+    btn_next = Button(ax_next, "Next Gate", hovercolor="0.975")
+
+    class State:
+        frame = 0
+        playing = True
+        ignore_slider = False
+
+    state = State()
+
+    def frame_generator():
+        while True:
+            if state.playing:
+                state.frame = (state.frame + 1) % len(time_array)
+            yield state.frame
+
+    def wrapped_update(frame_idx):
+        artists = update_func(frame_idx)
+        if not state.ignore_slider:
+            state.ignore_slider = True
+            slider.set_val(time_array[frame_idx])
+            state.ignore_slider = False
+        return artists if artists else []
+
+    anim = FuncAnimation(
+        fig,
+        wrapped_update,
+        frames=frame_generator,
+        interval=frame_interval_ms,
+        blit=False,
+        save_count=len(time_array),
+    )
+
+    def toggle_play(event):
+        if state.playing:
+            anim.pause()
+            btn_play.label.set_text("Play")
+        else:
+            anim.resume()
+            btn_play.label.set_text("Pause")
+        state.playing = not state.playing
+        fig.canvas.draw_idle()
+
+    def step_back(event):
+        if state.playing:
+            toggle_play(None)
+        state.frame = (state.frame - 1) % len(time_array)
+        wrapped_update(state.frame)
+        fig.canvas.draw_idle()
+
+    def step_forward(event):
+        if state.playing:
+            toggle_play(None)
+        state.frame = (state.frame + 1) % len(time_array)
+        wrapped_update(state.frame)
+        fig.canvas.draw_idle()
+
+    def scrub(val):
+        if state.ignore_slider:
+            return
+        if state.playing:
+            toggle_play(None)
+        idx = (np.abs(time_array - val)).argmin()
+        state.frame = idx
+        wrapped_update(idx)
+        fig.canvas.draw_idle()
+
+    def reset_sim(event):
+        slider.set_val(0.0)
+
+    def jump_end(event):
+        slider.set_val(time_array[-1])
+
+    def jump_next_gate(event):
+        if state.playing:
+            toggle_play(None)
+        current_t = time_array[state.frame]
+        target_idx = len(time_array) - 1
+
+        if gate_schedule:
+            for gate in gate_schedule:
+                if gate["end"] > current_t + 0.005:
+                    target_idx = (np.abs(time_array - gate["end"])).argmin() + 1
+                    break
+
+        state.frame = target_idx
+        wrapped_update(target_idx)
+        fig.canvas.draw_idle()
+
+    btn_play.on_clicked(toggle_play)
+    btn_step_b.on_clicked(step_back)
+    btn_step_f.on_clicked(step_forward)
+    btn_reset.on_clicked(reset_sim)
+    btn_end.on_clicked(jump_end)
+    btn_next.on_clicked(jump_next_gate)
+    slider.on_changed(scrub)
+
+    return anim, (
+        slider,
+        btn_play,
+        btn_step_b,
+        btn_step_f,
+        btn_reset,
+        btn_end,
+        btn_next,
+        state,
+    )
+
+
+def animate_quantum_circuit_2d(
+    grid2d,
+    time_array,
+    marginals_1,
+    marginals_2,
+    bloch_vectors_1,
+    bloch_vectors_2,
+    fid_q1,
+    fid_q2,
+    center_q1,
+    center_q2,
+    mu,
+    sigma,
+    D,
+    gate_schedule,
+    initial_state,
+    target_state,
+    fps=30,
+):
+    """
+    General, dynamic circuit animator mapped natively from arbitrary sequence arrays.
+    """
+    fig = plt.figure(figsize=(16, 9))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1, 2.5])
+
+    ax_circuit = fig.add_subplot(gs[0, :])
+    ax_spatial = fig.add_subplot(gs[1, 0])
+    ax_bloch = fig.add_subplot(gs[1, 1], projection="3d")
+    b = qt.Bloch(fig=fig, axes=ax_bloch)
+    b.make_sphere()
+
+    # ---------------------------------------------------------
+    # 1. Dynamic Circuit Diagram (Top)
+    # ---------------------------------------------------------
+    ax_circuit.axis("off")
+    ax_circuit.set_ylim(-0.5, 1.5)
+
+    num_gates = len(gate_schedule)
+    x_max = max(num_gates + 1, 3)
+
+    # To cleanly center the circuit regardless of its length, we apply
+    # equal symmetric padding to both the left and right rails.
+    circuit_length = x_max - 0.5
+    padding = 1.5
+    ax_circuit.set_xlim(-padding, circuit_length + padding)
+
+    # Base rails: Q1 is top (y=1), Q2 is bottom (y=0)
+    ax_circuit.plot([0, circuit_length], [1, 1], color="black", lw=2, zorder=1)
+    ax_circuit.plot([0, circuit_length], [0, 0], color="black", lw=2, zorder=1)
+
+    ax_circuit.text(
+        -0.2, 1, "Q1", va="center", ha="right", fontsize=14, fontweight="bold"
+    )
+    ax_circuit.text(
+        -0.2, 0, "Q2", va="center", ha="right", fontsize=14, fontweight="bold"
+    )
+
+    # Initial State Indicators
+    ax_circuit.text(
+        -0.8,
+        1,
+        f"$|{initial_state[0]}\\rangle$",
+        va="center",
+        ha="right",
+        fontsize=15,
+        fontweight="bold",
+        color="#003366",
+    )
+    ax_circuit.text(
+        -0.8,
+        0,
+        f"$|{initial_state[1]}\\rangle$",
+        va="center",
+        ha="right",
+        fontsize=15,
+        fontweight="bold",
+        color="#003366",
+    )
+
+    # Final Target State Indicators
+    ax_circuit.text(
+        circuit_length + 0.8,
+        1,
+        f"$|{target_state[0]}\\rangle$",
+        va="center",
+        ha="left",
+        fontsize=15,
+        fontweight="bold",
+        color="#2A9D8F",
+    )
+    ax_circuit.text(
+        circuit_length + 0.8,
+        0,
+        f"$|{target_state[1]}\\rangle$",
+        va="center",
+        ha="left",
+        fontsize=15,
+        fontweight="bold",
+        color="#2A9D8F",
+    )
+
+    gate_visuals = []
+
+    for i, gate in enumerate(gate_schedule):
+        x_pos = i + 1
+        name = gate["name"]
+        elements = []
+
+        if name == "H1":
+            rect = plt.Rectangle(
+                (x_pos - 0.3, 0.7),
+                0.6,
+                0.6,
+                fill=True,
+                facecolor="white",
+                edgecolor="black",
+                lw=2.5,
+                zorder=3,
+            )
+            ax_circuit.add_patch(rect)
+            txt = ax_circuit.text(
+                x_pos,
+                1.0,
+                "H",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                zorder=4,
+            )
+            elements.extend([rect, txt])
+
+        elif name == "H2":
+            rect = plt.Rectangle(
+                (x_pos - 0.3, -0.3),
+                0.6,
+                0.6,
+                fill=True,
+                facecolor="white",
+                edgecolor="black",
+                lw=2.5,
+                zorder=3,
+            )
+            ax_circuit.add_patch(rect)
+            txt = ax_circuit.text(
+                x_pos,
+                0.0,
+                "H",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                zorder=4,
+            )
+            elements.extend([rect, txt])
+
+        elif name == "CZ":
+            (line,) = ax_circuit.plot(
+                [x_pos, x_pos], [0, 1], color="black", lw=2.5, zorder=2
+            )
+            (dot1,) = ax_circuit.plot(
+                [x_pos], [1.0], marker="o", color="black", markersize=12, zorder=3
+            )
+            (dot2,) = ax_circuit.plot(
+                [x_pos], [0.0], marker="o", color="black", markersize=12, zorder=3
+            )
+            elements.extend([line, dot1, dot2])
+
+        gate_visuals.append(
+            {"start": gate["start"], "end": gate["end"], "elements": elements}
+        )
+
+    # ---------------------------------------------------------
+    # 2. Spatial Density Panel (Bottom Left)
+    # ---------------------------------------------------------
+    (line_p1,) = ax_spatial.plot([], [], color="#E63946", lw=2.5, label="Q1")
+    (line_p2,) = ax_spatial.plot(
+        [], [], color="#457B9D", lw=2.5, linestyle="--", label="Q2"
+    )
+
+    # Fixed trap borders
+    ax_spatial.hlines(
+        0,
+        center_q1 - mu - sigma,
+        center_q1 - mu + sigma,
+        color="#E63946",
+        lw=5,
+        alpha=0.4,
+    )
+    ax_spatial.hlines(
+        0,
+        center_q1 + mu - sigma,
+        center_q1 + mu + sigma,
+        color="#E63946",
+        lw=5,
+        alpha=0.4,
+    )
+    ax_spatial.hlines(
+        0,
+        center_q2 - mu - sigma,
+        center_q2 - mu + sigma,
+        color="#457B9D",
+        lw=5,
+        alpha=0.4,
+    )
+    ax_spatial.hlines(
+        0,
+        center_q2 + mu - sigma,
+        center_q2 + mu + sigma,
+        color="#457B9D",
+        lw=5,
+        alpha=0.4,
+    )
+
+    ax_spatial.set_xlim(-D / 2 - 1.2, D / 2 + 1.2)
+    ax_spatial.set_ylim(-0.2, max(np.max(marginals_1), np.max(marginals_2)) * 1.3)
+    ax_spatial.legend(loc="upper right", fontsize=9)
+    ax_spatial.grid(True, alpha=0.2)
+
+    time_text = ax_spatial.text(
+        0.02, 0.95, "", transform=ax_spatial.transAxes, fontsize=11
+    )
+
+    # ---------------------------------------------------------
+    # 3. Dynamic Animation Update Cycle
+    # ---------------------------------------------------------
+    color_wait = "black"
+    color_active = "#457B9D"
+    color_done = "#2A9D8F"
+
+    def update(frame):
+        t = time_array[frame]
+
+        # Update Spatial Marginals
+        line_p1.set_data(grid2d.x, marginals_1[frame])
+        line_p2.set_data(grid2d.x, marginals_2[frame])
+        time_text.set_text(f"Time $t = {t:.2f}$")
+
+        # Update Circuit Graphic Colors
+        for gv in gate_visuals:
+            if t < gv["start"]:
+                color = color_wait
+            elif t <= gv["end"]:
+                color = color_active
+            else:
+                color = color_done
+
+            for el in gv["elements"]:
+                if isinstance(el, plt.Rectangle):
+                    el.set_edgecolor(color)
+                else:
+                    el.set_color(color)
+
+        # Update Bloch Sphere Trajectories
+        b.vectors = []
+        b.add_vectors(bloch_vectors_1[frame])
+        b.add_vectors(bloch_vectors_2[frame])
+        b.vector_color = ["#E63946", "#457B9D"]
+        b.make_sphere()
+
+        return line_p1, line_p2, time_text
+
+    frame_interval_ms = int(1000 / fps)
+    anim, controls = _build_dynamic_interactive_animation(
+        fig, time_array, update, frame_interval_ms, gate_schedule=gate_schedule
+    )
+
+    print(f"Final Fidelity to |{target_state[0]}>: {fid_q1:.4f}")
+    print(f"Final Fidelity to |{target_state[1]}>: {fid_q2:.4f}")
+
+    plt.show()
+    return anim, controls

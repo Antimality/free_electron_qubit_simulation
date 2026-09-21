@@ -185,3 +185,6 @@ cython_debug/
 
 # MacOS Spesific Hidden Files
 .DS_Store
+
+# Simulation Cache
+.sim_cache

@@ -221,6 +221,33 @@ class Wavefunction2D:
         self.psi = (g1 * g2).astype(complex)
         self._normalize()
 
+    def init_logical_state(self, state1, state2, center_q1, center_q2, mu, sigma):
+        """
+        Initializes a normalized 2D wavepacket based on logical string states ('0', '1', '+', '-').
+        """
+
+        def build_1d_amp(state_val, center, x_coord):
+            g0 = np.exp(-((x_coord - (center - mu)) ** 2) / (4 * sigma**2))
+            g1 = np.exp(-((x_coord - (center + mu)) ** 2) / (4 * sigma**2))
+
+            s = str(state_val)
+            if s == "0":
+                return g0
+            elif s == "1":
+                return g1
+            elif s == "+":
+                return (g0 + g1) / np.sqrt(2.0)
+            elif s == "-":
+                return (g0 - g1) / np.sqrt(2.0)
+            else:
+                raise ValueError("State must be '0', '1', '+', or '-'")
+
+        psi_q1 = build_1d_amp(state1, center_q1, self.grid.x1)
+        psi_q2 = build_1d_amp(state2, center_q2, self.grid.x2)
+
+        self.psi = (psi_q1 * psi_q2).astype(complex)
+        self._normalize()
+
     def init_fermionic_gaussian(self, mu1, mu2, sigma):
         """
         BONUS: Initializes a perfectly antisymmetric state (Slater determinant)
