@@ -64,3 +64,136 @@ class Propagator:
 
         # Reconstruct psi(x,t) = sum(c_n(t) * evec_n(x))
         wavefunction_out.psi = np.dot(self.evecs, c_nt)
+
+
+class SplitOperatorPropagator:
+    """
+    Evolve the wavefunction using the Split-Operator Fourier Transform (SOFT) method.
+    """
+
+    def __init__(self, grid, potential_array, m=1.0, hbar=1.0):
+        self.grid = grid
+        self.dx = grid.dx
+        self.N = grid.N
+        self.potential = potential_array.astype(complex)
+        self.m = m
+        self.hbar = hbar
+
+        spatial_freqs = np.fft.fftfreq(self.N, d=self.dx)
+        self.p = 2.0 * np.pi * self.hbar * spatial_freqs
+
+        self.kinetic_energy = (self.p**2) / (2.0 * self.m)
+        self.initial_psi = None
+        self.current_t = 0.0
+        self.current_psi = None
+
+    def set_initial_state(self, wavefunction):
+        """
+        Sets the initial wavefunction.
+        No matrix diagonalization or projection is needed for the SOFT method.
+        """
+        self.initial_psi = wavefunction.psi.copy().astype(complex)
+        self.current_t = 0.0
+        self.current_psi = self.initial_psi.copy()
+
+    def evolve(self, t, wavefunction_out, dt=0.005):
+        """
+        Evolves the state to absolute time 't'.
+        Uses caching to only compute the delta from the current time.
+        """
+        if self.initial_psi is None:
+            raise ValueError("Initial state not set. Call set_initial_state() first.")
+
+        if t < self.current_t or t == 0:
+            self.current_t = 0.0
+            self.current_psi = self.initial_psi.copy()
+
+        time_to_evolve = t - self.current_t
+
+        if time_to_evolve > 0:
+            steps = max(1, int(time_to_evolve / dt))
+            actual_dt = time_to_evolve / steps
+
+            U_V_half = np.exp(-0.5j * self.potential * actual_dt / self.hbar)
+            U_K = np.exp(-1j * self.kinetic_energy * actual_dt / self.hbar)
+
+            psi = self.current_psi
+            for _ in range(steps):
+                psi = psi * U_V_half
+                psi = np.fft.ifft(np.fft.fft(psi) * U_K)
+                psi = psi * U_V_half
+
+            self.current_psi = psi
+            self.current_t = t
+
+        wavefunction_out.psi = self.current_psi.copy()
+
+
+class SplitOperatorPropagator2D:
+    """
+    Evolves a 2D wavefunction (two particles in 1D) using the
+    Split-Operator Fourier Transform (SOFT) method.
+    """
+
+    def __init__(self, grid2d, potential_array, m=1.0, hbar=1.0):
+        self.grid = grid2d
+        self.dx = grid2d.dx
+        self.N = grid2d.N
+        self.potential = potential_array.astype(complex)
+        self.m = m
+        self.hbar = hbar
+
+        spatial_frequencies = np.fft.fftfreq(self.N, d=self.dx)
+        p_base = 2.0 * np.pi * self.hbar * spatial_frequencies
+
+        self.p1, self.p2 = np.meshgrid(p_base, p_base, indexing="ij")
+
+        self.kinetic_energy = (self.p1**2 + self.p2**2) / (2.0 * self.m)
+
+        self.initial_psi = None
+        self.current_t = 0.0
+        self.current_psi = None
+
+    def set_initial_state(self, wavefunction_2d):
+        """Saves the exact initial state and resets the internal clock."""
+        self.initial_psi = wavefunction_2d.psi.copy().astype(complex)
+        self.current_t = 0.0
+        self.current_psi = self.initial_psi.copy()
+
+    def evolve(self, t, wavefunction_out, dt=0.005):
+        """Evolves the 2D state forward in time."""
+        if self.initial_psi is None:
+            raise ValueError("Initial state not set.")
+
+        if t < self.current_t or t == 0:
+            self.current_t = 0.0
+            self.current_psi = self.initial_psi.copy()
+
+        time_to_evolve = t - self.current_t
+
+        if time_to_evolve > 0:
+            steps = max(1, int(time_to_evolve / dt))
+            actual_dt = time_to_evolve / steps
+
+            U_V_half = np.exp(-0.5j * self.potential * actual_dt / self.hbar)
+            U_K = np.exp(-1j * self.kinetic_energy * actual_dt / self.hbar)
+
+            psi = self.current_psi
+            for _ in range(steps):
+                psi = psi * U_V_half
+                psi_p = np.fft.fft2(psi)
+                psi_p = psi_p * U_K
+                psi = np.fft.ifft2(psi_p)
+                psi = psi * U_V_half
+
+            self.current_psi = psi
+            self.current_t = t
+
+        wavefunction_out.psi = self.current_psi.copy()
+
+    def update_potential(self, new_potential_array):
+        """
+        Dynamically updates the Hamiltonian landscape mid-simulation
+        to apply different quantum gates.
+        """
+        self.potential = new_potential_array.astype(complex)

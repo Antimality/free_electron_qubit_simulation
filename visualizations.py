@@ -50,11 +50,34 @@ def _precompute_evolution(grid, prop, time_array):
     densities = []
     bloch_states = []
     current_wf = Wavefunction(grid)
+    import qutip as qt
+
+    psi_0 = prop.evecs[:, 0].copy()
+    psi_1 = prop.evecs[:, 1].copy()
+
+    idx_right = np.argmin(np.abs(grid.x - 0.4))
+    if np.real(psi_0[idx_right]) < 0:
+        psi_0 = -psi_0
+    if np.real(psi_1[idx_right]) < 0:
+        psi_1 = -psi_1
+
+    basis_1 = (psi_0 + psi_1) / np.sqrt(2.0)
+    basis_0 = (psi_0 - psi_1) / np.sqrt(2.0)
 
     for t in time_array:
         prop.evolve(t, current_wf)
-        densities.append(current_wf.get_probability_density())
-        bloch_states.append(current_wf.get_qutip_qubit())
+        densities.append(np.abs(current_wf.psi) ** 2)
+
+        c_0 = np.dot(np.conj(basis_0), current_wf.psi) * grid.dx
+        c_1 = np.dot(np.conj(basis_1), current_wf.psi) * grid.dx
+
+        norm = np.sqrt(np.abs(c_0) ** 2 + np.abs(c_1) ** 2)
+        if norm > 0:
+            c_0 /= norm
+            c_1 /= norm
+
+        state = c_0 * qt.basis(2, 0) + c_1 * qt.basis(2, 1)
+        bloch_states.append(state)
 
     return densities, bloch_states
 
@@ -166,10 +189,12 @@ def _build_interactive_animation(
 
 def _setup_1d_axis(ax, grid, prop, initial_wf, y_lim=None, T_h=None, T_f=None):
     """Configures the 1D spatial evolution subplot and draws static overlays."""
-
     ax.set_xlim(grid.x_min, grid.x_max)
-    if y_lim is not None:
+    if isinstance(y_lim, tuple):
+        ax.set_ylim(y_lim)
+    elif y_lim is not None:
         ax.set_ylim(0, y_lim)
+
     ax.set_xlabel("Position (x)", fontsize=12)
     ax.set_ylabel(r"Probability Density $|\psi(x,t)|^2$", fontsize=12)
     ax.set_title("Spatial Wavefunction Evolution", fontsize=14, fontweight="bold")

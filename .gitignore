@@ -182,3 +182,9 @@ cython_debug/
 
 # VSC
 .vscode
+
+# MacOS Spesific Hidden Files
+.DS_Store
+
+# Simulation Cache
+.sim_cache
