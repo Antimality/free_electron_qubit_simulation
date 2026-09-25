@@ -772,7 +772,7 @@ def animate_quantum_circuit_2d(
     # 1. Dynamic Circuit Diagram (Top)
     # ---------------------------------------------------------
     ax_circuit.axis("off")
-    ax_circuit.set_ylim(-0.5, 1.5)
+    ax_circuit.set_ylim(-0.5, 2)
 
     num_gates = len(gate_schedule)
     x_max = max(num_gates + 1, 3)
@@ -836,6 +836,23 @@ def animate_quantum_circuit_2d(
         fontsize=15,
         fontweight="bold",
         color="#2A9D8F",
+    )
+
+    # Final Fidelities Box at the top of the circuit
+    ax_circuit.text(
+        circuit_length / 2.0,
+        2,
+        f"Final Fidelities $\\rightarrow$ Q1 ($|{target_state[0]}\\rangle$): {fid_q1:.4f}   |   Q2 ($|{target_state[1]}\\rangle$): {fid_q2:.4f}",
+        ha="center",
+        va="center",
+        fontsize=13,
+        fontweight="bold",
+        bbox={
+            "boxstyle": "round,pad=0.4",
+            "facecolor": "wheat",
+            "edgecolor": "gray",
+            "alpha": 0.8,
+        },
     )
 
     gate_visuals = []

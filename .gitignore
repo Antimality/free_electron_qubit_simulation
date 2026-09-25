@@ -188,3 +188,6 @@ cython_debug/
 
 # Simulation Cache
 .sim_cache
+
+# Temp folder
+.tmp

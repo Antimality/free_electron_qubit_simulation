@@ -41,15 +41,24 @@ class GateLibrary:
 
         self.T_cz = (np.pi * p["hbar"]) / abs(E00 + E11 - E01 - E10)
         self.T_phase = (np.pi * p["hbar"]) / (2.0 * p["dU"])
-        self.T_z_corr = self.T_phase
+
+        # Extend the Z-correction duration to ensure the phase gate remains in the
+        # safe, perturbative regime without violently squeezing the wavepacket.
+        self.T_z_corr = self.T_phase * p["cz_slowdown_mult"]
 
         # Virtual Z correction phases derived from the CZ interaction
-        self.theta_1 = (E10 * self.T_cz / p["hbar"]) - (E00 * self.T_cz / p["hbar"])
-        self.theta_2 = (E01 * self.T_cz / p["hbar"]) - (E00 * self.T_cz / p["hbar"])
+        self.theta_1 = (E10 - E00) * self.T_cz / p["hbar"]
+        self.theta_2 = (E01 - E00) * self.T_cz / p["hbar"]
 
     def _build_gate_potentials(self):
         """Pre-generates all 2D potential matrices used by the gates."""
         p = self.p
+
+        # Spatial overlap factor to correct the physical expectation value of the applied Gaussian masks
+        overlap_factor = 1.0 / np.sqrt(1.0 + (p["sigma_init"] / p["sigma_well"]) ** 2)
+
+        # Boost the requested phase shift depth to account for spatial overlap attenuation
+        dU_phase = p["dU"] / overlap_factor
 
         self.V_hold = (
             adjacent_double_wells_2d(
@@ -84,7 +93,7 @@ class GateLibrary:
                 sigma=p["sigma_well"],
                 mu=p["mu"],
                 D=p["D"],
-                dU1=p["dU"],
+                dU1=dU_phase,
                 dU2=0,
             )
             - 1j * self.abso
@@ -112,18 +121,19 @@ class GateLibrary:
                 mu=p["mu"],
                 D=p["D"],
                 dU1=0,
-                dU2=p["dU"],
+                dU2=dU_phase,
             )
             - 1j * self.abso
         )
 
         # --- Entangling Potentials ---
         self.V_cz = self.V_hold + coulomb_interaction(
-            self.grid2d, k_e=p["k_e"], softening_a=0.1
+            self.grid2d, k_e=p["k_e"], softening_a=p["softening_a"]
         )
 
-        dU1_z = -(self.theta_1 * p["hbar"]) / self.T_z_corr
-        dU2_z = -(self.theta_2 * p["hbar"]) / self.T_z_corr
+        # Invert the phase relationship and boost dU to account for the spatial overlap.
+        dU1_z = -(self.theta_1 * p["hbar"]) / (self.T_z_corr * overlap_factor)
+        dU2_z = -(self.theta_2 * p["hbar"]) / (self.T_z_corr * overlap_factor)
 
         self.V_z_corr = (
             adjacent_double_wells_2d(
