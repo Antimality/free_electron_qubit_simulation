@@ -177,6 +177,26 @@ class GateLibrary:
                 ("HOLD", p["T_hold"], self.V_hold),
                 ("Z_CORR", self.T_z_corr, self.V_z_corr),
             ]
+        
+        elif gate_name == "X1":
+            return [
+                ("X1_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q1),
+                ("X1_TUNNEL", 2.0 * self.T_h, self.V_hadamard_q1),
+                ("X1_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q1),
+            ]
 
+        elif gate_name == "X2":
+            return [
+                ("X2_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q2),
+                ("X2_TUNNEL", 2.0 * self.T_h, self.V_hadamard_q2),
+                ("X2_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q2),
+            ]
+        
+        elif gate_name == "Z1":
+            return [("Z1_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q1)]
+
+        elif gate_name == "Z2":
+            return [("Z2_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q2)]
+        
         else:
             raise ValueError(f"Unknown gate requested: {gate_name}")

@@ -912,6 +912,109 @@ def animate_quantum_circuit_2d(
             )
             elements.extend([rect, txt])
 
+        
+        if name == "X1":
+            rect = plt.Rectangle(
+                (x_pos - 0.3, 0.7),
+                0.6,
+                0.6,
+                fill=True,
+                facecolor="white",
+                edgecolor="black",
+                lw=2.5,
+                zorder=3,
+            )
+            ax_circuit.add_patch(rect)
+            txt = ax_circuit.text(
+                x_pos,
+                1.0,
+                "X",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                zorder=4,
+            )
+            elements.extend([rect, txt])
+
+        elif name == "X2":
+            rect = plt.Rectangle(
+                (x_pos - 0.3, -0.3),
+                0.6,
+                0.6,
+                fill=True,
+                facecolor="white",
+                edgecolor="black",
+                lw=2.5,
+                zorder=3,
+            )
+            ax_circuit.add_patch(rect)
+            txt = ax_circuit.text(
+                x_pos,
+                0.0,
+                "X",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                zorder=4,
+            )
+            elements.extend([rect, txt])
+
+
+        if name == "Z1":
+            rect = plt.Rectangle(
+                (x_pos - 0.3, 0.7),
+                0.6,
+                0.6,
+                fill=True,
+                facecolor="white",
+                edgecolor="black",
+                lw=2.5,
+                zorder=3,
+            )
+            ax_circuit.add_patch(rect)
+            txt = ax_circuit.text(
+                x_pos,
+                1.0,
+                "Z",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                zorder=4,
+            )
+            elements.extend([rect, txt])
+
+        elif name == "Z2":
+            rect = plt.Rectangle(
+                (x_pos - 0.3, -0.3),
+                0.6,
+                0.6,
+                fill=True,
+                facecolor="white",
+                edgecolor="black",
+                lw=2.5,
+                zorder=3,
+            )
+            ax_circuit.add_patch(rect)
+            txt = ax_circuit.text(
+                x_pos,
+                0.0,
+                "Z",
+                ha="center",
+                va="center",
+                fontsize=14,
+                fontweight="bold",
+                color="black",
+                zorder=4,
+            )
+            elements.extend([rect, txt])
+
+
         elif name == "CZ":
             (line,) = ax_circuit.plot(
                 [x_pos, x_pos], [0, 1], color="black", lw=2.5, zorder=2
