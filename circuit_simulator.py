@@ -3,7 +3,7 @@ import qutip as qt
 from joblib import Memory
 from tqdm import tqdm
 
-from gates import GateLibrary
+from circuit_gates import GateLibrary
 from grid import Grid, Grid2D
 from potentials import complex_absorbing_potential_2d
 from propagator import SplitOperatorPropagator2D
