@@ -737,6 +737,53 @@ def _build_dynamic_interactive_animation(
     )
 
 
+def _create_gate_elements(ax, x_pos):
+    rect1 = plt.Rectangle(
+        (x_pos - 0.3, 0.7),
+        0.6,
+        0.6,
+        fill=True,
+        facecolor="white",
+        edgecolor="black",
+        lw=2.5,
+        zorder=3,
+    )
+    txt1 = ax.text(
+        x_pos,
+        1.0,
+        "",
+        ha="center",
+        va="center",
+        fontsize=14,
+        fontweight="bold",
+        color="black",
+        zorder=4,
+    )
+    rect2 = plt.Rectangle(
+        (x_pos - 0.3, -0.3),
+        0.6,
+        0.6,
+        fill=True,
+        facecolor="white",
+        edgecolor="black",
+        lw=2.5,
+        zorder=3,
+    )
+    txt2 = ax.text(
+        x_pos,
+        0.0,
+        "",
+        ha="center",
+        va="center",
+        fontsize=14,
+        fontweight="bold",
+        color="black",
+        zorder=4,
+    )
+
+    return rect1, txt1, rect2, txt2
+
+
 def animate_quantum_circuit_2d(
     grid2d,
     time_array,
@@ -862,159 +909,48 @@ def animate_quantum_circuit_2d(
         name = gate["name"]
         elements = []
 
-        if name == "H1":
-            rect = plt.Rectangle(
-                (x_pos - 0.3, 0.7),
-                0.6,
-                0.6,
-                fill=True,
-                facecolor="white",
-                edgecolor="black",
-                lw=2.5,
-                zorder=3,
-            )
+        # Base elements
+        rect1, txt1, rect2, txt2 = _create_gate_elements(ax_circuit, x_pos)
+
+        def _set_text(elems, rect, txt, str):
             ax_circuit.add_patch(rect)
-            txt = ax_circuit.text(
-                x_pos,
-                1.0,
-                "H",
-                ha="center",
-                va="center",
-                fontsize=14,
-                fontweight="bold",
-                color="black",
-                zorder=4,
-            )
-            elements.extend([rect, txt])
+            txt.set_text(str)
+            elems.extend([rect, txt])
+
+        # Hadamard Gates
+        if name == "H1":
+            _set_text(elements, rect1, txt1, "H")
 
         elif name == "H2":
-            rect = plt.Rectangle(
-                (x_pos - 0.3, -0.3),
-                0.6,
-                0.6,
-                fill=True,
-                facecolor="white",
-                edgecolor="black",
-                lw=2.5,
-                zorder=3,
-            )
-            ax_circuit.add_patch(rect)
-            txt = ax_circuit.text(
-                x_pos,
-                0.0,
-                "H",
-                ha="center",
-                va="center",
-                fontsize=14,
-                fontweight="bold",
-                color="black",
-                zorder=4,
-            )
-            elements.extend([rect, txt])
+            _set_text(elements, rect2, txt2, "H")
 
-        
+        elif name == "HH":
+            _set_text(elements, rect1, txt1, "H")
+            _set_text(elements, rect2, txt2, "H")
+
+        # X gates
         if name == "X1":
-            rect = plt.Rectangle(
-                (x_pos - 0.3, 0.7),
-                0.6,
-                0.6,
-                fill=True,
-                facecolor="white",
-                edgecolor="black",
-                lw=2.5,
-                zorder=3,
-            )
-            ax_circuit.add_patch(rect)
-            txt = ax_circuit.text(
-                x_pos,
-                1.0,
-                "X",
-                ha="center",
-                va="center",
-                fontsize=14,
-                fontweight="bold",
-                color="black",
-                zorder=4,
-            )
-            elements.extend([rect, txt])
+            _set_text(elements, rect1, txt1, "X")
 
         elif name == "X2":
-            rect = plt.Rectangle(
-                (x_pos - 0.3, -0.3),
-                0.6,
-                0.6,
-                fill=True,
-                facecolor="white",
-                edgecolor="black",
-                lw=2.5,
-                zorder=3,
-            )
-            ax_circuit.add_patch(rect)
-            txt = ax_circuit.text(
-                x_pos,
-                0.0,
-                "X",
-                ha="center",
-                va="center",
-                fontsize=14,
-                fontweight="bold",
-                color="black",
-                zorder=4,
-            )
-            elements.extend([rect, txt])
+            _set_text(elements, rect2, txt2, "X")
 
+        elif name == "X2":
+            _set_text(elements, rect1, txt1, "X")
+            _set_text(elements, rect2, txt2, "X")
 
+        # Z gates
         if name == "Z1":
-            rect = plt.Rectangle(
-                (x_pos - 0.3, 0.7),
-                0.6,
-                0.6,
-                fill=True,
-                facecolor="white",
-                edgecolor="black",
-                lw=2.5,
-                zorder=3,
-            )
-            ax_circuit.add_patch(rect)
-            txt = ax_circuit.text(
-                x_pos,
-                1.0,
-                "Z",
-                ha="center",
-                va="center",
-                fontsize=14,
-                fontweight="bold",
-                color="black",
-                zorder=4,
-            )
-            elements.extend([rect, txt])
+            _set_text(elements, rect1, txt1, "Z")
 
         elif name == "Z2":
-            rect = plt.Rectangle(
-                (x_pos - 0.3, -0.3),
-                0.6,
-                0.6,
-                fill=True,
-                facecolor="white",
-                edgecolor="black",
-                lw=2.5,
-                zorder=3,
-            )
-            ax_circuit.add_patch(rect)
-            txt = ax_circuit.text(
-                x_pos,
-                0.0,
-                "Z",
-                ha="center",
-                va="center",
-                fontsize=14,
-                fontweight="bold",
-                color="black",
-                zorder=4,
-            )
-            elements.extend([rect, txt])
+            _set_text(elements, rect2, txt2, "Z")
 
+        elif name == "ZZ":
+            _set_text(elements, rect1, txt1, "Z")
+            _set_text(elements, rect2, txt2, "Z")
 
+        # CZ gate
         elif name == "CZ":
             (line,) = ax_circuit.plot(
                 [x_pos, x_pos], [0, 1], color="black", lw=2.5, zorder=2

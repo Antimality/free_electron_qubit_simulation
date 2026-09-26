@@ -60,6 +60,13 @@ class GateLibrary:
         # Boost the requested phase shift depth to account for spatial overlap attenuation
         dU_phase = p["dU"] / overlap_factor
 
+        """
+        A single qubit gate is marked by a letter a number (e.g. H1 or P2).
+        A single qubit gate on both qubits at once will just be double the letter (e.g. XX).
+        A two qubit gate will be it's name (e.g. CZ).
+        """
+
+        # Hold Potential
         self.V_hold = (
             adjacent_double_wells_2d(
                 self.grid2d,
@@ -72,20 +79,8 @@ class GateLibrary:
             - 1j * self.abso
         )
 
-        # --- Qubit 1 (Target) Potentials ---
-        self.V_hadamard_q1 = (
-            adjacent_double_wells_2d(
-                self.grid2d,
-                U0_1=p["U0_tunnel"],
-                U0_2=p["U0_hold"],
-                sigma=p["sigma_well"],
-                mu=p["mu"],
-                D=p["D"],
-            )
-            - 1j * self.abso
-        )
-
-        self.V_phase_shift_q1 = (
+        # Phase Potentials
+        self.V_P1 = (
             adjacent_double_wells_2d(
                 self.grid2d,
                 U0_1=p["U0_hold"],
@@ -99,8 +94,48 @@ class GateLibrary:
             - 1j * self.abso
         )
 
-        # --- Qubit 2 (Target) Potentials ---
-        self.V_hadamard_q2 = (
+        self.V_P2 = (
+            adjacent_double_wells_2d(
+                self.grid2d,
+                U0_1=p["U0_hold"],
+                U0_2=p["U0_hold"],
+                sigma=p["sigma_well"],
+                mu=p["mu"],
+                D=p["D"],
+                dU1=0,
+                dU2=dU_phase,
+            )
+            - 1j * self.abso
+        )
+
+        self.V_PP = (
+            adjacent_double_wells_2d(
+                self.grid2d,
+                U0_1=p["U0_hold"],
+                U0_2=p["U0_hold"],
+                sigma=p["sigma_well"],
+                mu=p["mu"],
+                D=p["D"],
+                dU1=dU_phase,
+                dU2=dU_phase,
+            )
+            - 1j * self.abso
+        )
+
+        # Hadamard Potentials
+        self.V_H1 = (
+            adjacent_double_wells_2d(
+                self.grid2d,
+                U0_1=p["U0_tunnel"],
+                U0_2=p["U0_hold"],
+                sigma=p["sigma_well"],
+                mu=p["mu"],
+                D=p["D"],
+            )
+            - 1j * self.abso
+        )
+
+        self.V_H2 = (
             adjacent_double_wells_2d(
                 self.grid2d,
                 U0_1=p["U0_hold"],
@@ -112,16 +147,14 @@ class GateLibrary:
             - 1j * self.abso
         )
 
-        self.V_phase_shift_q2 = (
+        self.V_HH = (
             adjacent_double_wells_2d(
                 self.grid2d,
-                U0_1=p["U0_hold"],
-                U0_2=p["U0_hold"],
+                U0_1=p["U0_tunnel"],
+                U0_2=p["U0_tunnel"],
                 sigma=p["sigma_well"],
                 mu=p["mu"],
                 D=p["D"],
-                dU1=0,
-                dU2=dU_phase,
             )
             - 1j * self.abso
         )
@@ -152,51 +185,71 @@ class GateLibrary:
     def get_sequence(self, gate_name):
         """Returns the physical breakdown of a logical gate as (Name, Duration, Potential)."""
         p = self.p
+
         if gate_name == "HOLD":
             return [("HOLD", p["T_hold"], self.V_hold)]
 
+        # Hadamard Gates
         elif gate_name == "H1":
             return [
-                ("H1_PHASE", self.T_phase, self.V_phase_shift_q1),
-                ("H1_TUNNEL", self.T_h, self.V_hadamard_q1),
-                ("H1_PHASE", self.T_phase, self.V_phase_shift_q1),
+                ("H1_PHASE", self.T_phase, self.V_P1),
+                ("H1_TUNNEL", self.T_h, self.V_H1),
+                ("H1_PHASE", self.T_phase, self.V_P1),
             ]
 
         elif gate_name == "H2":
             return [
-                ("H2_PHASE", self.T_phase, self.V_phase_shift_q2),
-                ("H2_TUNNEL", self.T_h, self.V_hadamard_q2),
-                ("H2_PHASE", self.T_phase, self.V_phase_shift_q2),
+                ("H2_PHASE", self.T_phase, self.V_P2),
+                ("H2_TUNNEL", self.T_h, self.V_H2),
+                ("H2_PHASE", self.T_phase, self.V_P2),
             ]
 
+        elif gate_name == "HH":
+            return [
+                ("HH_PHASE", self.T_phase, self.V_PP),
+                ("HH_TUNNEL", self.T_h, self.V_HH),
+                ("HH_PHASE", self.T_phase, self.V_PP),
+            ]
+
+        # X Gates
+        elif gate_name == "X1":
+            return [
+                ("X1_PHASE", 2.0 * self.T_phase, self.V_P1),
+                ("X1_TUNNEL", 2.0 * self.T_h, self.V_H1),
+                ("X1_PHASE", 2.0 * self.T_phase, self.V_P1),
+            ]
+
+        elif gate_name == "X2":
+            return [
+                ("X2_PHASE", 2.0 * self.T_phase, self.V_P2),
+                ("X2_TUNNEL", 2.0 * self.T_h, self.V_H2),
+                ("X2_PHASE", 2.0 * self.T_phase, self.V_P2),
+            ]
+
+        elif gate_name == "XX":
+            return [
+                ("XX_PHASE", 2.0 * self.T_phase, self.V_PP),
+                ("XX_TUNNEL", 2.0 * self.T_h, self.V_HH),
+                ("XX_PHASE", 2.0 * self.T_phase, self.V_PP),
+            ]
+
+        # Z Gates
+        elif gate_name == "Z1":
+            return [("Z1_PHASE", 2.0 * self.T_phase, self.V_P1)]
+
+        elif gate_name == "Z2":
+            return [("Z2_PHASE", 2.0 * self.T_phase, self.V_P2)]
+
+        elif gate_name == "ZZ":
+            return [("ZZ_PHASE", 2.0 * self.T_phase, self.V_PP)]
+
+        # CZ Gate
         elif gate_name == "CZ":
-            # Restoring the necessary HOLD period allows the wavepacket to
-            # recover from breathing before the Gaussian phase mask is applied.
             return [
                 ("CZ_INTERACT", self.T_cz, self.V_cz),
                 ("HOLD", p["T_hold"], self.V_hold),
                 ("Z_CORR", self.T_z_corr, self.V_z_corr),
             ]
-        
-        elif gate_name == "X1":
-            return [
-                ("X1_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q1),
-                ("X1_TUNNEL", 2.0 * self.T_h, self.V_hadamard_q1),
-                ("X1_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q1),
-            ]
 
-        elif gate_name == "X2":
-            return [
-                ("X2_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q2),
-                ("X2_TUNNEL", 2.0 * self.T_h, self.V_hadamard_q2),
-                ("X2_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q2),
-            ]
-        
-        elif gate_name == "Z1":
-            return [("Z1_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q1)]
-
-        elif gate_name == "Z2":
-            return [("Z2_PHASE", 2.0 * self.T_phase, self.V_phase_shift_q2)]
-        
         else:
             raise ValueError(f"Unknown gate requested: {gate_name}")

@@ -7,14 +7,12 @@ if __name__ == "__main__":
     target_state = [1, 1]
     
     circuit_sequence = [
-        "HOLD",
-        "H1", "H2", "HOLD",  # Initialization
-        "CZ", "HOLD",        # Oracle
-        "Z1", "Z2",          # Diffuser (Fast Z instead of X)
-        "H1", "H2", "HOLD",
+        "HH", "HOLD",  # Initialization
+        "CZ", "HOLD",  # Oracle
+        "ZZ", "HOLD",  # Diffuser
+        "HH", "HOLD",
         "CZ", "HOLD",
-        "H1", "H2",
-        "HOLD"
+        "HH", "HOLD",
     ]
     
     res, grid2d, gate_schedule = run_simulation(
