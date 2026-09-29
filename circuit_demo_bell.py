@@ -11,7 +11,7 @@ if __name__ == "__main__":
         "HOLD", "HOLD",                  # System is maximally entangled here
         "H1", "CZ", "H1", "HOLD", "H2",  # Uncompute (Reverse)
         "HOLD"
-    ]
+    ]  # fmt: off
 
     res, grid2d, gate_schedule = run_simulation(
         PARAMS, initial_state, target_state, circuit_sequence

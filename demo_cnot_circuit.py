@@ -1,5 +1,6 @@
 import numpy as np
 import qutip as qt
+from joblib import Memory
 
 from grid import Grid, Grid2D
 from potentials import (
@@ -12,7 +13,11 @@ from propagator import Propagator, SplitOperatorPropagator2D
 from visualizations_2d import animate_cnot_circuit_2d, get_local_qutip_qubit
 from wavefunction import Wavefunction2D
 
-if __name__ == "__main__":
+memory = Memory(location=".sim_cache", verbose=1)
+
+
+@memory.cache
+def run_simulation():
     # ---------------------------------------------------------
     # Intialization and gate calibration
     # ---------------------------------------------------------
@@ -219,7 +224,7 @@ if __name__ == "__main__":
         fidelities_q2.append(qt.fidelity(rho_2, target_state_q2) ** 2)
 
     print("Launching Integrated Circuit Dashboard...")
-    anim, controls = animate_cnot_circuit_2d(
+    _anim, _controls = animate_cnot_circuit_2d(
         grid2d,
         time_array,
         marginals_1,
@@ -236,3 +241,7 @@ if __name__ == "__main__":
         time_schedule,
         fps=fps,
     )
+
+
+if __name__ == "__main__":
+    run_simulation()

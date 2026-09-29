@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+from joblib import Memory
 
 from grid import Grid
 from potentials import gaussian_walls
@@ -12,7 +13,11 @@ from visualizations import (
 )
 from wavefunction import Wavefunction
 
-if __name__ == "__main__":
+memory = Memory(location=".sim_cache", verbose=1)
+
+
+@memory.cache
+def run_simulation():
     # 1. Setup Grid
     # Spanning slightly beyond the walls (e.g., L_grid = 2.0) prevents the wavepacket
     # tails from violently clipping the numerical boundaries.
@@ -40,9 +45,6 @@ if __name__ == "__main__":
     # mu_left = (grid.L / 2.0) - 0.25
     # wf_initial.init_coherent_state(offset=mu_left, omega=omega, m=m, hbar=hbar)
     wf_initial.init_gaussian(mu=0.25, sigma=0.05)
-
-    # String example with double backslash escaping for LaTeX
-    plot_title = "Wavepacket Probability Density \\|\\psi(x)\\|^2"
 
     # 5. Calculate theoretical gate times using the exact energy gap
     dE = (np.pi * hbar) ** 2 / (2 * m * L_grid**2)
@@ -87,3 +89,7 @@ if __name__ == "__main__":
         max_time=T_f * 2,
         cmap="magma",
     )
+
+
+if __name__ == "__main__":
+    run_simulation()

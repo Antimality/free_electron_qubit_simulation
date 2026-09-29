@@ -5,7 +5,7 @@ if __name__ == "__main__":
     # Grover's Algorithm for 2 Qubits (Searching for |11>)
     initial_state = [0, 0]
     target_state = [1, 1]
-    
+
     circuit_sequence = [
         "HH", "HOLD",  # Initialization
         "CZ", "HOLD",  # Oracle
@@ -13,8 +13,8 @@ if __name__ == "__main__":
         "HH", "HOLD",
         "CZ", "HOLD",
         "HH", "HOLD",
-    ]
-    
+    ]  # fmt: off
+
     res, grid2d, gate_schedule = run_simulation(
         PARAMS, initial_state, target_state, circuit_sequence
     )

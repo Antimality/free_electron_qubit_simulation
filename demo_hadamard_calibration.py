@@ -1,5 +1,6 @@
 import numpy as np
 import qutip as qt
+from joblib import Memory
 
 from grid import Grid, Grid2D
 from potentials import (
@@ -15,7 +16,11 @@ from visualizations_2d import (
 )
 from wavefunction import Wavefunction2D
 
-if __name__ == "__main__":
+memory = Memory(location=".sim_cache", verbose=1)
+
+
+@memory.cache
+def run_simulation():
     L_grid = 1.0
     N_grid = 256
     m = 1.0
@@ -31,7 +36,7 @@ if __name__ == "__main__":
     U0_hold = -200.0
     U0_tunnel = -100.0
 
-    dU = 10.0 #different potential between the wells for phase shift
+    dU = 10.0  # different potential between the wells for phase shift
 
     # --- Step 1: Calibration ---
     print("Calibrating exact Hadamard time...")
@@ -61,10 +66,10 @@ if __name__ == "__main__":
         )
         - 1j * abso
     )
-    
+
     V_phase_shift = (
         adjacent_double_wells_2d(
-            grid2d, U0_1=U0_hold, U0_2=U0_hold , sigma=sigma_well, mu=mu, D=D, dU1 = dU
+            grid2d, U0_1=U0_hold, U0_2=U0_hold, sigma=sigma_well, mu=mu, D=D, dU1=dU
         )
         - 1j * abso
     )
@@ -86,7 +91,6 @@ if __name__ == "__main__":
     T_hold_end = 0.0
     T_phase = (np.pi * hbar) / (2.0 * dU)
     total_time = T_hold_start + T_h + T_phase + T_hold_end
-
 
     fps = 30
     dt_anim = 0.01
@@ -148,7 +152,7 @@ if __name__ == "__main__":
     )
 
     print("Launching Interactive Player...")
-    anim, controls = animate_combined_simulation_2d(
+    _anim, _controls = animate_combined_simulation_2d(
         grid2d,
         time_array,
         marginals_1,
@@ -171,3 +175,7 @@ if __name__ == "__main__":
         title_str="Interactive Hadamard Gate Evolution",
         jump_btn_text="Jump to Hadamard",
     )
+
+
+if __name__ == "__main__":
+    run_simulation()

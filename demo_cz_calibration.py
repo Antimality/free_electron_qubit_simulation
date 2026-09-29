@@ -1,5 +1,6 @@
 import numpy as np
 import qutip as qt
+from joblib import Memory
 
 from grid import Grid2D
 from potentials import (
@@ -48,7 +49,11 @@ def apply_virtual_z(wf, center_q1, center_q2, theta_1, theta_2):
     wf.psi *= np.exp(1j * phase_mask)
 
 
-if __name__ == "__main__":
+memory = Memory(location=".sim_cache", verbose=1)
+
+
+@memory.cache
+def run_simulation():
     L_grid = 1.0
     N_grid = 256
     m = 1.0
@@ -188,7 +193,7 @@ if __name__ == "__main__":
     )
 
     print("Launching Interactive Player...")
-    anim, controls = animate_combined_simulation_2d(
+    _anim, _controls = animate_combined_simulation_2d(
         grid2d,
         time_array,
         marginals_1,
@@ -211,3 +216,7 @@ if __name__ == "__main__":
         title_str="Interactive Universal CZ Evolution",
         jump_btn_text="Jump to CZ",
     )
+
+
+if __name__ == "__main__":
+    run_simulation()

@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+from joblib import Memory
 
 # Import custom modules
 from grid import Grid
@@ -13,7 +14,12 @@ from visualizations import (
 )
 from wavefunction import Wavefunction
 
-if __name__ == "__main__":
+memory = Memory(location=".sim_cache", verbose=1)
+
+
+@memory.cache
+def run_simulation():
+    # ruff: disable[F841]
     # Constants
     L_grid = 1.0
     N_grid = 1000
@@ -22,6 +28,7 @@ if __name__ == "__main__":
     mu = L_grid / 4.0
     sigma = 0.05
     delta = 0.1
+    # ruff: enable[F841]
 
     # Setup
     grid = Grid(L_grid, N_grid)
@@ -89,3 +96,7 @@ if __name__ == "__main__":
         n_steps=200,
         max_time=T_f * 2,
     )
+
+
+if __name__ == "__main__":
+    run_simulation()

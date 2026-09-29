@@ -15,7 +15,7 @@ if __name__ == "__main__":
         "H1", "CZ", "H1", "HOLD",  # 1st CNOT
         "H2", "CZ", "H2", "HOLD",  # 2nd CNOT
         "H1", "CZ", "H1", "HOLD"   # 3rd CNOT
-    ]
+    ]  # fmt: off
 
     res, grid2d, gate_schedule = run_simulation(
         PARAMS, initial_state, target_state, circuit_sequence
