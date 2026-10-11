@@ -8,7 +8,7 @@ from grid import Grid
 from potentials import infinite_box
 from propagator import Propagator
 from visualizations import (
-    animate_combined_simulation,
+    animate_simulation,
     plot_waveform_evolution_2d,
     visual_results,
 )
@@ -77,7 +77,7 @@ def run_simulation():
 
     # Combined Split-Screen Animation
     print("\nStarting combined split-screen animation...")
-    animate_combined_simulation(
+    animate_simulation(
         grid,
         prop,
         wf_initial,

@@ -379,6 +379,8 @@ def visual_results(
         ax.set_xlim(grid.x_min, grid.x_max)
         ax.grid(alpha=0.3)
 
+        # ! Temporary: Disable fidelity display
+        fidelity = None
         if fidelity is not None:
             props = {"boxstyle": "round", "facecolor": "wheat", "alpha": 0.8}
             ax.text(
