@@ -172,8 +172,8 @@ class Wavefunction:
         except ImportError:
             raise ImportError("The 'qutip' library is required.")
 
-        mask0 = self.grid.x < self.grid.center
-        mask1 = self.grid.x >= self.grid.center
+        mask0 = self.grid.x < self.grid.grid_center
+        mask1 = self.grid.x >= self.grid.grid_center
 
         density = self.get_probability_density()
 
